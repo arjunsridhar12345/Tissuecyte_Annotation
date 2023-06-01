@@ -1,9 +1,10 @@
 {
   "ExpandedNodes": [
     "",
+    "\\Database",
     "\\Software",
     "\\Software_Analysis"
   ],
-  "SelectedNode": "\\Software\\get_spike_depths.py",
+  "SelectedNode": "\\Software\\generate_metrics_paths.py",
   "PreviewInSolutionExplorer": false
 }

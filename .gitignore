@@ -11,3 +11,9 @@
 /Software/output.html
 *.pyc
 *.vsidx
+.vs/slnx.sqlite
+.vs/VSWorkspaceState.json
+.vs/VSWorkspaceState.json
+.vs/slnx.sqlite
+.vscode/launch.json
+.vs/Tissuecyte_Annotation/v17/.wsuo

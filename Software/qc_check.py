@@ -25,11 +25,11 @@ class qcChecker():
 
         self.spikeAmps = np.load(pathlib.Path(self.kiloPath, 'amplitudes.npy'), mmap_mode='r')[:, 0] # spikes amps file
         print(self.spikeAmps.dtype)
-        self.spikeClusters = np.load(pathlib.Path(self.kiloPath, 'spike_clusters.npy'), mmap_mode='r')[:, 0] # spike clusters file
+        self.spikeClusters = np.load(pathlib.Path(self.kiloPath, 'spike_clusters.npy'), mmap_mode='r') # spike clusters file
         print(self.spikeClusters.dtype)
         self.spikeDepths = np.load(pathlib.Path(self.kiloPath, 'spike_depths.npy'),  mmap_mode='r') # spike depths
         print(self.spikeDepths.dtype)
-        self.spikeTimes = np.load(pathlib.Path(self.kiloPath, 'spike_times.npy'), mmap_mode='r')[:, 0] / 30000. # spike times
+        self.spikeTimes = np.load(pathlib.Path(self.kiloPath, 'spike_times.npy'), mmap_mode='r') / 30000. # spike times
         print(self.spikeTimes.dtype)
         self.spikeIdx = np.arange(self.spikeClusters.size)
         # Filter for nans in depths and also in amps
@@ -167,7 +167,7 @@ class qcChecker():
                 'xaxis': 'Distance from probe tip (um)'
         }
 
-        path = pathlib.Path('//allen/programs/mindscope/workgroups/np-behavior/tissuecyte/{}/image_plots'.format(self.mouseID))
+        path = pathlib.Path('/allen/programs/mindscope/workgroups/np-behavior/tissuecyte/{}/image_plots'.format(self.mouseID))
 
         if not path.exists():
             path.mkdir()
@@ -176,6 +176,10 @@ class qcChecker():
             pickle.dump(data_img, f)
 
 if __name__ == '__main__':
-    kilo_sort_path = pathlib.Path("//allen/programs/mindscope/workgroups/np-exp/1216100684_632296_20221006/1216100684_632296_20221006_probeB_sorted/continuous/Neuropix-PXI-100.0")
+    probe = 'probeB'
+    session = 'DRpilot_644866_20230210'
+    path = r'\\allen\programs\mindscope\workgroups\dynamicrouting\datajoint\inbox\ks_paramset_idx_1\{}\{}_{}_sorted\continuous\Neuropix-PXI-100.0'.format(
+                    session, session, probe)
+    kilo_sort_path = pathlib.Path(path)
     qc = qcChecker(kilo_sort_path)
     qc.get_fr()

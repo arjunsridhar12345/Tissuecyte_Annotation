@@ -175,7 +175,7 @@ class PlotDisplayItem():
 
     # generates the metrics based on the measurement passed in
     # measurement: string, the metric
-    def generateMetrics(self, measurement, templeton=False):
+    def generateMetrics(self, measurement, templeton=False, channels=None):
         if self.measurement == 'unit_density':
             self.processMetrics(templeton=templeton)
             self.frequencyCounts = self.waveform_metrics['peak_channel'].value_counts().sort_index().reset_index().to_numpy()
@@ -206,6 +206,13 @@ class PlotDisplayItem():
         else:
             self.processMetrics(templeton=templeton)
             self.generateMetricChannels(measurement, scale_value=1/100, shift_value=250)
+
+    def updatePlotChannelPositions(self, channel_positions:list):
+        self.ogChannelsShift = [[p[0] - 200, p[1]] for p in channel_positions]
+        self.ogChannelsShift = [[self.ogChannelsShift[i][0], 384 - i - 1 + 256] for i in range(384)]
+
+        self.adj = [[i, i + 1] for i in range(len(self.channelsOriginal) - 1)]
+        self.ogChannelsPlot.setData(pos=np.array(self.ogChannelsShift, dtype=float), adj=np.array(self.adj, dtype=int))
 
     # helper function to generate the metric channels
     # metric: string
@@ -252,7 +259,10 @@ class PlotDisplayItem():
         
     def processMetrics(self, templeton=False):
         if not templeton:
-            self.waveform_metrics = self.waveform_metrics.drop(columns=['epoch_name_quality_metrics', 'epoch_name_waveform_metrics', 'quality'])
+            if 'quality' in self.waveform_metrics.columns:
+                self.waveform_metrics = self.waveform_metrics.drop(columns=['epoch_name_quality_metrics', 'epoch_name_waveform_metrics', 'quality'])
+            else:
+                self.waveform_metrics = self.waveform_metrics.drop(columns=['epoch_name_quality_metrics', 'epoch_name_waveform_metrics'])
         #self.wnorm = (2 * (self.waveform_metrics - self.waveform_metrics.min()) / (self.waveform_metrics.max() - self.waveform_metrics.min())) - 1
 
         #self.wnorm['peak_channel'] = self.waveform_metrics['peak_channel']
@@ -1918,10 +1928,10 @@ class VolumeAlignment(QWidget):
 
         view = self.image.getView()
         self.plotImage = pg.ImageItem()
-        print(data)
+        #print(data)
         rot = np.rot90(np.rot90(data['img']))
         flip = np.flipud(rot)
-        print(flip.shape)
+        #print(flip.shape)
         self.plotImage.setImage(flip)
         transform = [data['scale'][0], 0., 0., 0., data['scale'][1], 0., -700.,
                         self.plots['unit_density'].ogChannelsShift[-1][1], 1.]
@@ -2012,36 +2022,48 @@ class VolumeAlignment(QWidget):
 
 
             view.addItem(self.plots['unit_density'].channelsPlot) # add unit plot
+            self.plots['unit_density'].updatePlotChannelPositions(self.plots['unit_density'].channels)
             view.addItem(self.plots['unit_density'].ogChannelsPlot)
             #view.addItem(self.plots[self.metrics.currentText().lower()].channelsPlot) # add metric plot
             self.displayPlotImage()
-
+            y = [t[1] for t in self.plots['unit_density'].channels]
             self.anchorPts = plot_items[2].copy() # add line pts
-            for pts in self.anchorPts:
-                line_item = pg.ScatterPlotItem(pos=pts, pen=QtGui.QPen(QColor('yellow')), brush=QtGui.QBrush(QColor('yellow')), size=3)
-                line_item.sigClicked.connect(self.clickLine)
-                self.lineItems.append(line_item)
 
+            for pts in self.anchorPts:
+                if pts[0][1] in y:
+                    line_item = pg.ScatterPlotItem(pos=pts, pen=QtGui.QPen(QColor('yellow')), brush=QtGui.QBrush(QColor('yellow')), size=3)
+                    line_item.sigClicked.connect(self.clickLine)
+                    self.lineItems.append(line_item)
+
+            for pts in self.anchorPts:
+                if pts[0][1] not in y:
+                    self.anchorPts.remove(pts)
+        
             for item in self.lineItems:
                 view.addItem(item)
 
             self.pointsAdded = plot_items[3].copy() # restore alignment
-            y = [t[1] for t in self.plots['unit_density'].channels]
             self.displayImageCCFAreas(y)
 
             for point in self.pointsAdded:
-                ind = y.index(point)
-                text = pg.TextItem(str(ind))
-                text.setPos(80, point)
-                self.textItems.append(text)
+                if point not in y:
+                    self.pointsAdded.remove(point)
 
-                plotItem = pg.ScatterPlotItem(pos=[[i, self.plots['unit_density'].ogChannelsShift[ind][1]] for i in range(-700, 
-                                                                                                  int(self.plots['unit_density'].ogChannelsShift[ind][0]))], 
-                                                  pen=QtGui.QPen(QColor('yellow')), brush=QtGui.QBrush(QColor('yellow')), size=3)
-                view.addItem(text)
-                view.addItem(plotItem)
-                self.plotImageItems.append(plotItem)
+            for point in self.pointsAdded:
+                if point in y:
+                    ind = y.index(point)
+                    text = pg.TextItem(str(ind))
+                    text.setPos(80, point)
+                    self.textItems.append(text)
 
+                    plotItem = pg.ScatterPlotItem(pos=[[i, self.plots['unit_density'].ogChannelsShift[ind][1]] for i in range(-700, 
+                                                                                                    int(self.plots['unit_density'].ogChannelsShift[ind][0]))], 
+                                                    pen=QtGui.QPen(QColor('yellow')), brush=QtGui.QBrush(QColor('yellow')), size=3)
+                    view.addItem(text)
+                    view.addItem(plotItem)
+                    self.plotImageItems.append(plotItem)
+            
+            print('Length of points added, anchor points', len(self.pointsAdded), len(self.anchorPts))
         #view.addItem(self.textItem)
         
 if __name__ == '__main__':
