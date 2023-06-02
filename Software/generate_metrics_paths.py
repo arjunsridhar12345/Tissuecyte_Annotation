@@ -17,7 +17,7 @@ def get_metrics_directory(base_path: Union[str, pathlib.Path],  mouse_id: str):
     probe_directories = []
 
     for d in directories:
-        if mouse_id in d:
+        if mouse_id in d and 'json' not in d and 'Shortcut' not in d:
             probe_directories.append(d)
     
     return probe_directories
