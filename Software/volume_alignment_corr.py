@@ -1297,10 +1297,10 @@ class VolumeAlignment(QWidget):
 
                 self.prevProbe = probe
                 #self.oldMetric = metric
-            except FileNotFoundError:
+            except (FileNotFoundError, KeyError):
                 view.removeItem(self.plots['unit_density'].channelsPlot)
                 #view.removeItem(self.plots[metric].channelsPlot)
-                self.resetPlot()
+                #self.resetPlot()
                 self.updateDisplay(probe)
                 popup = QMessageBox()
                 popup.setText('Couldn\'t find metrics.csv for {}'.format(probe))
@@ -1352,7 +1352,7 @@ class VolumeAlignment(QWidget):
                         popup = QMessageBox()
                         popup.setText('Couldn\'t find metrics.csv for {}'.format(probe))
                         popup.exec_()
-            except (FileNotFoundError, IndexError): # metrics file not found
+            except (FileNotFoundError, IndexError, KeyError): # metrics file not found
                 view.removeItem(self.plots['unit_density'].channelsPlot)
                 #view.removeItem(self.plots[metric].channelsPlot)
                 self.resetPlot()
