@@ -800,7 +800,8 @@ class VolumeAlignment(QWidget):
         self.saveAnchor(anchor)
     # resets the plots
     def resetPlot(self):
-        self.plots['unit_density'].resetPlot()
+        if hasattr(self.plots['unit_density'], 'channelsOriginal'):
+            self.plots['unit_density'].resetPlot()
         
         #self.plots[self.metrics.currentText().lower()].resetPlot()
         self.showProbe = True
@@ -1300,7 +1301,7 @@ class VolumeAlignment(QWidget):
             except (FileNotFoundError, KeyError):
                 view.removeItem(self.plots['unit_density'].channelsPlot)
                 #view.removeItem(self.plots[metric].channelsPlot)
-                #self.resetPlot()
+                self.resetPlot()
                 self.updateDisplay(probe)
                 popup = QMessageBox()
                 popup.setText('Couldn\'t find metrics.csv for {}'.format(probe))

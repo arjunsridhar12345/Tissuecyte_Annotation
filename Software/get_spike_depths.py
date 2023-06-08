@@ -57,7 +57,7 @@ if __name__ == '__main__':
     mouse_ids = ['614608', '615047', '615563', '615564', '623319', '623322', '623784', '623786', '626279', '632295', '632296', 
                  '633232', '636740', '637483', '638387', '640887', '640890', '642504']
     # TODO: 615048, 636740
-    for mouse in mouse_ids:
+    for mouse in ['636740']:
         metrics_paths = generate_metrics_path_days(pathlib.Path('/allen/programs/mindscope/workgroups/np-exp'), mouse)
         probe_letters = ['A', 'B', 'C', 'D', 'E', 'F']
 
