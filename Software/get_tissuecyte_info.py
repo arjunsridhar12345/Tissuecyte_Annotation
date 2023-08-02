@@ -48,3 +48,6 @@ def get_specimen_id_from_labtracks_id(labtracks_id):
 
     mouse_info = query_lims(SPECIMEN_QRY.format(int(labtracks_id)))
     return mouse_info[0]['id']
+
+if __name__ == '__main__':
+    get_tc_info('671439')

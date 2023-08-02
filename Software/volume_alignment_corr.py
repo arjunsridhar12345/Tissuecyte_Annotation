@@ -40,6 +40,7 @@ parser.add_argument('-t', '--templeton', help='Templeton experiment', required=F
 parser.add_argument('-r', '--record', help='Record Node number', required=False, default = "")
 parser.add_argument('-o', '--oldDirStruct', help='Old Directory Structure', required=False, default="")
 parser.add_argument('-s', '--synology', help='On Synology drive or not', required=False, default="")
+parser.add_argument('--dr', help='Dynamic Routing experiment', required=False, default='')
 
 SCALING_FACTOR = 1.5
 DEFAULT_COLOR_VALUES = [[0, 256], [0, 256], [0, 1000]]
@@ -261,7 +262,7 @@ class PlotDisplayItem():
         if not templeton:
             if 'quality' in self.waveform_metrics.columns:
                 self.waveform_metrics = self.waveform_metrics.drop(columns=['epoch_name_quality_metrics', 'epoch_name_waveform_metrics', 'quality'])
-            else:
+            elif 'epoch_name_quality_metrics' in self.waveform_metrics.columns:
                 self.waveform_metrics = self.waveform_metrics.drop(columns=['epoch_name_quality_metrics', 'epoch_name_waveform_metrics'])
         #self.wnorm = (2 * (self.waveform_metrics - self.waveform_metrics.min()) / (self.waveform_metrics.max() - self.waveform_metrics.min())) - 1
 
@@ -402,7 +403,7 @@ class PlotDisplayItem():
 
 # class to do the alignment between channels and regions
 class VolumeAlignment(QWidget):
-    def __init__(self, mouse_id, templeton=False, old_struct=False, synology=False, base_path=None, record_node=None):
+    def __init__(self, mouse_id, dr=False, templeton=False, old_struct=False, synology=False, base_path=None, record_node=None):
         super().__init__()
         self.mouseID = mouse_id
         self.title = 'Volume Alignment for Mouse {}'.format(self.mouseID)
@@ -416,7 +417,11 @@ class VolumeAlignment(QWidget):
         self.noRecord = False
 
         if not templeton:
-            self.waveMetricsPath = generate_metrics_path_ephys(self.basePath, self.mouseID)
+            if not dr:
+                self.waveMetricsPath = generate_metrics_path_ephys(self.basePath, self.mouseID)
+            else:
+                self.waveMetricsPath = generate_metrics_path_days(self.basePath, self.mouseID)
+
             #self.days = sorted(list(self.waveMetricsPath.keys()))
             self.waveform_metrics = pd.read_csv(os.path.join(self.basePath, '1178173272_608671_20220518/1178173272_608671_20220518_probeB_sorted/continuous/Neuropix-PXI-100.0', 
                                                              'metrics.csv'))
@@ -2085,6 +2090,9 @@ if __name__ == '__main__':
                 v = VolumeAlignment(mouse_id, templeton=True, old_struct=True, base_path=args.templeton, record_node=args.record)
         else:
             v = VolumeAlignment(mouse_id, templeton=True, base_path=args.templeton, record_node=args.record)
+    elif args.dr:
+        v = VolumeAlignment(mouse_id, dr=True)
     else:
         v = VolumeAlignment(mouse_id)
+        
     sys.exit(app.exec_())

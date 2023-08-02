@@ -77,7 +77,7 @@ def generate_metrics_path_days(base_path, mouse_id):
         probe_metrics_dirs.append([os.path.join(base_path, directory, d, 'continuous') for d in probe_dirs if os.path.exists(os.path.join(base_path, directory, d, 'continuous'))])
     
     metrics_path_days = {}
-    days = ['1', '2', '3', '4']
+    days = [1, 2, 3, 4]
     i = 0
     for directory in sorted(probe_metrics_dirs):
         if len(directory) > 0:
