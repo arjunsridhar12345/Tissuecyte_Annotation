@@ -71,7 +71,7 @@ def update_session_metadata_table(mouse_id:str, genotype:str, project:str, rig:s
             dye_json = json.load(f)
             dye = dye_json['dye']
     else:
-        dye = 'No dye.json file found'
+        dye = None
     
 
     session_metadata_dict:dict = {}
@@ -175,8 +175,8 @@ if __name__ == '__main__':
     structure_tree = pd.read_csv(pathlib.Path('//allen/programs/mindscope/workgroups/dynamicrouting/dynamic_gating_insertions/ccf_structure_tree_2017.csv'))
 
     update_session_metadata_table(args.mouseID, args.genotype, args.project, args.rig, args.date, int(args.day))
-    ccf_rows_added = update_ccf_channel_table(args.mouseID, int(args.day))
-    update_min_distance_vector_displacement_tables(ccf_rows_added, area_center_of_mass, ENGINE)
-    update_hit_rate_table(ccf_rows_added, area_center_of_mass, structure_tree, ENGINE)
+    #ccf_rows_added = update_ccf_channel_table(args.mouseID, int(args.day))
+    #update_min_distance_vector_displacement_tables(ccf_rows_added, area_center_of_mass, ENGINE)
+    #update_hit_rate_table(ccf_rows_added, area_center_of_mass, structure_tree, ENGINE)
 
 

@@ -274,6 +274,9 @@ class AnnotationProbesViewer(QWidget):
         for probe in probes:
             df_probe = self.updatedAnnotations.loc[self.updatedAnnotations['probe_name'] == probe]
             df_probe.to_csv(os.path.join(self.workingDirectory, 'reassigned', '{}_annotations_{}_reassigned.csv'.format(probe, self.mouseID)))
+        
+        with open(os.path.join(self.workingDirectory, 'probes.pickle'), 'wb') as f:
+            pickle.dump(self.probesGenerate, f)
 
     # populates the drop down, used when probes are updated
     def populateDropDown(self, qProbe, qTrial):
