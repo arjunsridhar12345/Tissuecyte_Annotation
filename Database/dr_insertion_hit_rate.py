@@ -31,7 +31,7 @@ def strip_subregions_list(areas: list):
     return areas_abbreviated
 
 def strip_subregions_layers(areastr):
-    if not isinstance(areastr, str):
+    if not isinstance(areastr, str) or areastr == 'No Area' or areastr == 'Track not annotated':
         return areastr
     
     areastr = areastr.split('-')[0]

@@ -27,14 +27,31 @@ from collections import Counter
 import seaborn as sns
 import pickle
 
+import sqlite3
+from sqlalchemy import  create_engine
+
 backend = 'pyqt5'
 app = vis.use(backend)
+
+# ------------------------------------------------------------------------------------
+# allow integers >8 bytes to be stored in sqlite3
+sqlite3.register_adapter(np.int64, lambda val: int(val))
+sqlite3.register_adapter(np.int32, lambda val: int(val))
+# ------------------------------------------------------------------------------------
+DB_PATH = pathlib.Path('//allen/programs/mindscope/workgroups/dynamicrouting/dynamic_gating_insertions/dr_master.db')
+# with contextlib.suppress(OSError):
+#     DB_PATH.unlink()
+sqlite3.connect(DB_PATH).close()
+DB = f"sqlite:///{DB_PATH}"
+ENGINE = create_engine(DB, echo=False)
 
 class ProbeHoleImplantViewer(QWidget):
     def __init__(self):
         super().__init__()
         self.workingDirectory = pathlib.Path('//allen/programs/mindscope/workgroups/np-behavior')
-        self.probeHoleDataFrame = pd.read_excel(pathlib.Path('//allen/programs/mindscope/workgroups/np-behavior/tissuecyte/dr_master_sheet.xlsx'))
+        #self.probeHoleDataFrame = pd.read_excel(pathlib.Path('//allen/programs/mindscope/workgroups/np-behavior/tissuecyte/dr_master_sheet.xlsx'))
+        self.probeHoleDataFrame = pd.read_sql_table('channel_ccf_coords', con=ENGINE)
+        self.sessionDataFrame = pd.read_sql_table('session_metadata', con=ENGINE)
         self.getProbeHoleImplantCombinations(self.probeHoleDataFrame)
         self.annotationImage = sitk.ReadImage(pathlib.Path(self.workingDirectory, 'tissuecyte', 'field_reference', 'average_template_25.nrrd'))
 
@@ -107,10 +124,12 @@ class ProbeHoleImplantViewer(QWidget):
         for item in self.probeHoleImplantList:
             if hole == 'nan':
                 if item[1] == probe and item[3] == implant:
-                    mouse_ids_probe_days.append((item[0], item[4], item[5]))
+                    # MID, probe, probe+day, session
+                    mouse_ids_probe_days.append((item[0], item[1], item[1]+str(item[4]), item[5]))
             else:
                 if item[1] == probe and item[2] == hole and str(item[3]) == implant:
-                    mouse_ids_probe_days.append((item[0], item[4], item[5]))
+                    # MID, probe, probe+day, session
+                    mouse_ids_probe_days.append((item[0], item[1], item[1]+str(item[4]), item[5]))
 
         self.updateDisplay(mouse_ids_probe_days=mouse_ids_probe_days)
 
@@ -170,8 +189,8 @@ class ProbeHoleImplantViewer(QWidget):
             self.holeDropDown.clear()
             self.implantDropDown.clear()
 
-            self.df_probe_based = self.probeHoleDataFrame.loc[self.probeHoleDataFrame['probe'] == self.probeDropDown.currentText()]
-            unique_implants = self.df_probe_based['implant'].unique()
+            self.df_probe_based = self.probeHoleDataFrame.loc[self.probeHoleDataFrame['Probe'] == self.probeDropDown.currentText()]
+            unique_implants = self.df_probe_based['Implant'].unique()
 
             for implant in unique_implants:
                 self.implantDropDown.addItem(str(implant))
@@ -183,9 +202,9 @@ class ProbeHoleImplantViewer(QWidget):
         if not self.implantChanged:
             self.holeDropDown.clear()
             if self.implantDropDown != 'Implant':
-                self.df_probe_implant_based = self.df_probe_based.loc[self.df_probe_based['implant'].astype(str) == self.implantDropDown.currentText()]
+                self.df_probe_implant_based = self.df_probe_based.loc[self.df_probe_based['Implant'].astype(str) == self.implantDropDown.currentText()]
 
-                unique_holes = self.df_probe_implant_based['hole'].unique()
+                unique_holes = self.df_probe_implant_based['Hole'].unique()
                 for hole in unique_holes:
                     self.holeDropDown.addItem(str(hole))
 
@@ -234,7 +253,7 @@ class ProbeHoleImplantViewer(QWidget):
             plt.show()
     
     # gets the coordinates of the given area
-    def getBrainAreaCoordinates(self, area:str) -> np.array:
+    def getBrainAreaCoordinates(self, area:str) -> np.ndarray:
         structure_id = self.acrnm_map[area]
         brain_area_coordinates = np.where(self.anno == structure_id)
 
@@ -279,6 +298,8 @@ class ProbeHoleImplantViewer(QWidget):
             for item in mouse_ids_probe_days:
                 mouse_id = item[0]
                 probe_day = item[2]
+                session = item[3]
+                session = session[0:session.index('_')]
 
                 df_path = pathlib.Path(pathlib.Path(self.workingDirectory, 'tissuecyte', str(mouse_id), 'Probe_{}_channels_{}_warped.csv'.format(probe_day, str(mouse_id))))
                 if df_path.exists():
@@ -319,10 +340,10 @@ class ProbeHoleImplantViewer(QWidget):
                     scatter_colors[probe_day_label] = color
 
                     vis.plot(temp - coords[:, 2], coords[:, 1], coords[:, 0], lw=0, mw=10, ms='x', mc=color, axes=self.ax)
-                    legend.append('Probe{} Day{} Mouse{}'.format(probe_day[0], probe_day[1], mouse_id))
+                    legend.append('{} Mouse{} Probe{} Day{}'.format(session, mouse_id, probe_day[0], probe_day[1]))
             
-            vis.plot(temp - brain_coordinates[2], brain_coordinates[1], brain_coordinates[0], lw=0, mc=brain_coordinates_color, mw=10, ms='*', axes=self.ax)
-            legend.append('MD')
+            #vis.plot(temp - brain_coordinates[2], brain_coordinates[1], brain_coordinates[0], lw=0, mc=brain_coordinates_color, mw=10, ms='*', axes=self.ax)
+            #legend.append('MD')
             self.ax.legend = legend
             self.ax.axis.xLabel = 'ML'
             self.ax.axis.yLabel = 'DV'
@@ -331,7 +352,7 @@ class ProbeHoleImplantViewer(QWidget):
             #regions_unpacked = list(itertools.chain.from_iterable(regions_hit))
             self.updateGraphPlot(regions_data, colors)
             #self.plotClosestDistance(channel_area_distance)
-            self.plot2DProbeLocators(mouse_ids_probe_days, scatter_colors)
+            #self.plot2DProbeLocators(mouse_ids_probe_days, scatter_colors)
         else:
             vol = np.rot90(self.volume, k=2, axes=(0,2))
             vis.volshow3(vol)
@@ -351,14 +372,15 @@ class ProbeHoleImplantViewer(QWidget):
 
     # gets the combination of probe, hole, implant and mouse ids
     def getProbeHoleImplantCombinations(self, probe_hole_implant:pd.DataFrame):
-        self.probeHoleDataFrame = self.probeHoleDataFrame.loc[self.probeHoleDataFrame['annotated'] == True]
-        self.probeHoleImplantList = self.probeHoleDataFrame[['MID', 'probe', 'hole', 'implant', 'session',
-                                                             'probeandday', 'probeloc_x', 'probeloc_y']].to_numpy().tolist()
+        #self.probeHoleDataFrame = self.probeHoleDataFrame.loc[self.probeHoleDataFrame['annotated'] == True]
+        self.probeHoleDataFrame = self.probeHoleDataFrame.merge(self.sessionDataFrame[['session', 'MID', 'day']], 
+                                                                left_on=['MID', 'Day'], right_on=['MID', 'day'])
+        self.probeHoleImplantList = self.probeHoleDataFrame[['MID', 'Probe', 'Hole', 'Implant', 'Day', 'session']].to_numpy().tolist()
         df_unique_probe_hole_implant = probe_hole_implant.apply(lambda col: col.unique())
         self.uniqueMouseIDs = df_unique_probe_hole_implant['MID']
-        self.uniqueProbes = df_unique_probe_hole_implant['probe']
-        self.uniqueHoles = df_unique_probe_hole_implant['hole']
-        self.uniqueImplants = df_unique_probe_hole_implant['implant']
+        self.uniqueProbes = df_unique_probe_hole_implant['Probe']
+        self.uniqueHoles = df_unique_probe_hole_implant['Hole']
+        self.uniqueImplants = df_unique_probe_hole_implant['Implant']
 
         """
         combination_list = [self.uniqueMouseIDs, self.uniqueProbes, self.uniqueHoles, self.uniqueImplants]

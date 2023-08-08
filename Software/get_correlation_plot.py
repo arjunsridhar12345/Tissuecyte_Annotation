@@ -120,7 +120,7 @@ class qcChecker():
 if __name__ == '__main__':
     args = parser.parse_args()
     mouse = args.mouseID
-    mouse = '668759'
+
     metrics_paths = generate_metrics_path_days(pathlib.Path('//allen/programs/mindscope/workgroups/np-exp'), mouse)
     probe_letters = ['A', 'B', 'C', 'D', 'E', 'F']
 

@@ -133,8 +133,10 @@ def create_insertion_channel_table(path:pathlib.Path):
 
     insertion_channel = {'MID': [], 'Day':[], 'Probe': [], 'Implant': [], 'Hole': [], 'Rig': [], 'Channel_annotation_file': []}
     for i in range(384):
-        for position in ['AP', 'DV', 'ML']:
+        for position in ['AP', 'DV', 'ML', 'region']:
             insertion_channel['Channel_{}_{}'.format(i, position)] = []
+        
+        insertion_channel['Channel_{}_{}'.format(i, 'region')]
 
     for index, row in master_excel.iterrows():
         insertion_channel['MID'].append(row.MID)
@@ -155,12 +157,18 @@ def create_insertion_channel_table(path:pathlib.Path):
                 insertion_channel['Channel_{}_AP'.format(i)].append(np.nan)
                 insertion_channel['Channel_{}_DV'.format(i)].append(np.nan)
                 insertion_channel['Channel_{}_ML'.format(i)].append(np.nan)
+                insertion_channel['Channel_{}_region'.format(i)].append('Track not annotated')
                 #logging.warning(e)
         else:
             for index, r in df.iterrows():
                 insertion_channel['Channel_{}_AP'.format(index)].append(r.AP)
                 insertion_channel['Channel_{}_DV'.format(index)].append(r.DV)
                 insertion_channel['Channel_{}_ML'.format(index)].append(r.ML)
+
+                if pd.isna(r.region):
+                    insertion_channel['Channel_{}_region'.format(index)].append('No Area')
+                else:
+                    insertion_channel['Channel_{}_region'.format(index)].append(r.region)
 
     df_channel_coords = pd.DataFrame(insertion_channel)
     df_channel_coords.to_sql('channel_ccf_coords', con=ENGINE, if_exists='replace')

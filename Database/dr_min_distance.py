@@ -28,7 +28,7 @@ def min_distance_to_ccf_point(group:np.array, point:list):
     return displacement, np.min(distance)
 
 def min_displacement_vector_table(df_insertion_channel_coords:np.array):
-    print(df_insertion_channel_coords)
+    #print(df_insertion_channel_coords)
     dict_closest_point_insertion = {'MID': [], 'Day': [], 'Probe': [], 'Implant': [], 'Hole': [], 'Rig': []}
     directions = ['AP', 'DV', 'ML']
 
@@ -37,10 +37,10 @@ def min_displacement_vector_table(df_insertion_channel_coords:np.array):
             dict_closest_point_insertion['{}_{}'.format(area, direction)] = []
 
     for insertion in df_insertion_channel_coords:
-        ccf_coords = insertion[8:].reshape((384, 3))
+        ccf_coords = insertion[8:].reshape((384, 4))
         
         for area in area_center_of_mass:
-            displacement_vector = min_distance_to_ccf_point(ccf_coords, area_center_of_mass[area])[0]
+            displacement_vector = min_distance_to_ccf_point(ccf_coords[:, 0:3], area_center_of_mass[area])[0]
 
             for i in range(3):
                 dict_closest_point_insertion['{}_{}'.format(area, directions[i])].append(displacement_vector[i])
@@ -62,10 +62,10 @@ def min_distance_table(df_insertion_channel_coords:np.array):
         dict_min_distance_insertion[area] = []
 
     for insertion in df_insertion_channel_coords:
-        ccf_coords = insertion[8:].reshape((384, 3))
+        ccf_coords = insertion[8:].reshape((384, 4))
         
         for area in area_center_of_mass:
-            displacement = min_distance_to_ccf_point(ccf_coords, area_center_of_mass[area])[1]
+            displacement = min_distance_to_ccf_point(ccf_coords[:, 0:3], area_center_of_mass[area])[1]
 
             dict_min_distance_insertion[area].append(displacement)
 

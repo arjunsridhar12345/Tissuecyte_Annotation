@@ -27,4 +27,7 @@ if __name__ == '__main__':
     # read dr session table as a dataframe
     table_name = 'channel_ccf_coords'
     df_sessions = pd.read_sql_table(table_name, con=ENGINE)
-    print(df_sessions)
+    df_sessions_insertions = df_sessions.groupby(['Probe', 'Implant', 'Hole'])['MID'].count().reset_index(name='number_of_insertions')
+    df_sessions_greater_than_10_insertions = df_sessions_insertions[df_sessions_insertions['number_of_insertions'] >= 10]
+    df_sessions_greater_than_10_insertions.to_csv(pathlib.Path('//allen/programs/mindscope/workgroups/dynamicrouting/dynamic_gating_insertions/dynamic_gating_qc_insertions.csv'),
+                                                  index=False)
