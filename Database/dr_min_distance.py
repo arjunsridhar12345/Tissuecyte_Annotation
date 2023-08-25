@@ -29,7 +29,7 @@ def min_distance_to_ccf_point(group:np.array, point:list):
 
 def min_displacement_vector_table(df_insertion_channel_coords:np.array):
     #print(df_insertion_channel_coords)
-    dict_closest_point_insertion = {'MID': [], 'Day': [], 'Probe': [], 'Implant': [], 'Hole': [], 'Rig': []}
+    dict_closest_point_insertion = {'session': [], 'MID': [], 'Day': [], 'Probe': [], 'Implant': [], 'Hole': [], 'Rig': []}
     directions = ['AP', 'DV', 'ML']
 
     for area in area_center_of_mass:
@@ -37,7 +37,7 @@ def min_displacement_vector_table(df_insertion_channel_coords:np.array):
             dict_closest_point_insertion['{}_{}'.format(area, direction)] = []
 
     for insertion in df_insertion_channel_coords:
-        ccf_coords = insertion[8:].reshape((384, 4))
+        ccf_coords = insertion[9:].reshape((384, 4))
         
         for area in area_center_of_mass:
             displacement_vector = min_distance_to_ccf_point(ccf_coords[:, 0:3], area_center_of_mass[area])[0]
@@ -45,36 +45,38 @@ def min_displacement_vector_table(df_insertion_channel_coords:np.array):
             for i in range(3):
                 dict_closest_point_insertion['{}_{}'.format(area, directions[i])].append(displacement_vector[i])
 
-        dict_closest_point_insertion['MID'].append(insertion[1])
-        dict_closest_point_insertion['Day'].append(insertion[2])
-        dict_closest_point_insertion['Probe'].append(insertion[3])
-        dict_closest_point_insertion['Implant'].append(insertion[4])
-        dict_closest_point_insertion['Hole'].append(insertion[5])
-        dict_closest_point_insertion['Rig'].append(insertion[6])
+        dict_closest_point_insertion['session'].append(insertion[1])
+        dict_closest_point_insertion['MID'].append(insertion[2])
+        dict_closest_point_insertion['Day'].append(insertion[3])
+        dict_closest_point_insertion['Probe'].append(insertion[4])
+        dict_closest_point_insertion['Implant'].append(insertion[5])
+        dict_closest_point_insertion['Hole'].append(insertion[6])
+        dict_closest_point_insertion['Rig'].append(insertion[7])
 
     df_min_distance_insertion = pd.DataFrame(dict_closest_point_insertion)
     df_min_distance_insertion.to_sql('vector_to_region_com', con=ENGINE, schema=None, if_exists='replace')
 
 def min_distance_table(df_insertion_channel_coords:np.array):
-    dict_min_distance_insertion = {'MID': [], 'Day': [], 'Probe': [], 'Implant': [], 'Hole': [], 'Rig': []}
+    dict_min_distance_insertion = {'session': [], 'MID': [], 'Day': [], 'Probe': [], 'Implant': [], 'Hole': [], 'Rig': []}
 
     for area in area_center_of_mass:
         dict_min_distance_insertion[area] = []
 
     for insertion in df_insertion_channel_coords:
-        ccf_coords = insertion[8:].reshape((384, 4))
+        ccf_coords = insertion[9:].reshape((384, 4))
         
         for area in area_center_of_mass:
             displacement = min_distance_to_ccf_point(ccf_coords[:, 0:3], area_center_of_mass[area])[1]
 
             dict_min_distance_insertion[area].append(displacement)
 
-        dict_min_distance_insertion['MID'].append(insertion[1])
-        dict_min_distance_insertion['Day'].append(insertion[2])
-        dict_min_distance_insertion['Probe'].append(insertion[3])
-        dict_min_distance_insertion['Implant'].append(insertion[4])
-        dict_min_distance_insertion['Hole'].append(insertion[5])
-        dict_min_distance_insertion['Rig'].append(insertion[6])
+        dict_min_distance_insertion['session'].append(insertion[1])
+        dict_min_distance_insertion['MID'].append(insertion[2])
+        dict_min_distance_insertion['Day'].append(insertion[3])
+        dict_min_distance_insertion['Probe'].append(insertion[4])
+        dict_min_distance_insertion['Implant'].append(insertion[5])
+        dict_min_distance_insertion['Hole'].append(insertion[6])
+        dict_min_distance_insertion['Rig'].append(insertion[7])
 
     df_min_distance_insertion = pd.DataFrame(dict_min_distance_insertion)
     df_min_distance_insertion.to_sql('min_distance_to_region', con=ENGINE, schema=None, if_exists='replace')

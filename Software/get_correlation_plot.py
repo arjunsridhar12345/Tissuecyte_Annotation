@@ -117,11 +117,8 @@ class qcChecker():
         with open(pathlib.Path(path, '{}_corr.pickle'.format(self.probe)), 'wb') as f:
             pickle.dump(data_img, f)
 
-if __name__ == '__main__':
-    args = parser.parse_args()
-    mouse = args.mouseID
-
-    metrics_paths = generate_metrics_path_days(pathlib.Path('//allen/programs/mindscope/workgroups/np-exp'), mouse)
+def get_correlation_data(mouse_id:str):
+    metrics_paths = generate_metrics_path_days(pathlib.Path('//allen/programs/mindscope/workgroups/np-exp'), mouse_id)
     probe_letters = ['A', 'B', 'C', 'D', 'E', 'F']
 
     for day in metrics_paths:
@@ -132,5 +129,10 @@ if __name__ == '__main__':
             letter = [probe_letter for probe_letter in probe_letters if 'probe{}'.format(probe_letter) in str(kilo_sort_path)][0]
             probe = letter + str(day)
                     
-            if not pathlib.Path('//allen/programs/mindscope/workgroups/np-behavior/tissuecyte/{}/image_plots/{}_corr.pickle'.format(mouse, probe)).exists():
-                qcChecker(kilo_sort_path, mouse, probe).get_correlation_data_img()
+            if not pathlib.Path('//allen/programs/mindscope/workgroups/np-behavior/tissuecyte/{}/image_plots/{}_corr.pickle'.format(mouse_id, probe)).exists():
+                qcChecker(kilo_sort_path, mouse_id, probe).get_correlation_data_img()
+
+if __name__ == '__main__':
+    args = parser.parse_args()
+    mouse = args.mouseID
+    get_correlation_data(mouse)

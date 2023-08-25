@@ -299,7 +299,7 @@ class ProbeHoleImplantViewer(QWidget):
                 mouse_id = item[0]
                 probe_day = item[2]
                 session = item[3]
-                session = session[0:session.index('_')]
+                session = session
 
                 df_path = pathlib.Path(pathlib.Path(self.workingDirectory, 'tissuecyte', str(mouse_id), 'Probe_{}_channels_{}_warped.csv'.format(probe_day, str(mouse_id))))
                 if df_path.exists():
@@ -373,8 +373,6 @@ class ProbeHoleImplantViewer(QWidget):
     # gets the combination of probe, hole, implant and mouse ids
     def getProbeHoleImplantCombinations(self, probe_hole_implant:pd.DataFrame):
         #self.probeHoleDataFrame = self.probeHoleDataFrame.loc[self.probeHoleDataFrame['annotated'] == True]
-        self.probeHoleDataFrame = self.probeHoleDataFrame.merge(self.sessionDataFrame[['session', 'MID', 'day']], 
-                                                                left_on=['MID', 'Day'], right_on=['MID', 'day'])
         self.probeHoleImplantList = self.probeHoleDataFrame[['MID', 'Probe', 'Hole', 'Implant', 'Day', 'session']].to_numpy().tolist()
         df_unique_probe_hole_implant = probe_hole_implant.apply(lambda col: col.unique())
         self.uniqueMouseIDs = df_unique_probe_hole_implant['MID']

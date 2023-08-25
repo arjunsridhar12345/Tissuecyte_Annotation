@@ -8,6 +8,16 @@ import argparse
 from dr_master_tables import get_annotation_file
 from update_calculations_tables import update_min_distance_vector_displacement_tables, update_hit_rate_table
 from typing import Union
+import npc_session
+from clean_region import assign_label
+import pickle
+import SimpleITK as sitk
+
+
+with open(pathlib.Path(r"\\allen\programs\mindscope\workgroups\np-behavior\tissuecyte\field_reference\acrnm_map.pkl"), 'rb') as f:
+    ACRONYM_MAP = pickle.load(f)
+
+ANNOTATION_VOLUME = sitk.GetArrayFromImage(sitk.ReadImage(pathlib.Path(r"\\allen\programs\mindscope\workgroups\np-behavior\tissuecyte\field_reference\ccf_ano.mhd")))
 
 # ------------------------------------------------------------------------------------
 # allow integers >8 bytes to be stored in sqlite3
@@ -78,7 +88,7 @@ def update_session_metadata_table(mouse_id:str, genotype:str, project:str, rig:s
     date = date.replace('_', '')
     session_metadata_dict['session'] = [f'{mouse_id}_{date}']
     session_metadata_dict['MID'] = [mouse_id]
-    session_metadata_dict['implant'] = [insertion_json['probe_insertions']['implant']]
+    session_metadata_dict['implant'] = '2002' if '2002' in [insertion_json['probe_insertions']['implant']] else [insertion_json['probe_insertions']['implant']]
     session_metadata_dict['day'] = [day]
     session_metadata_dict['dye'] = dye
     session_metadata_dict['Rig'] = [rig]
@@ -118,7 +128,8 @@ def update_ccf_channel_table(mouse_id:str, day:int) -> pd.DataFrame:
     if len(sessions_to_update) == 0:
         raise ValueError('No record to update')
     
-    ccf_channel_row: dict = {'MID': [], 'Day':[], 'Probe': [], 'Implant': [], 'Hole': [], 'Rig': [], 'Channel_annotation_file': []}
+    ccf_channel_row: dict = {'session': [],'MID': [], 'Day':[], 'Probe': [], 'Implant': [], 'Hole': [], 
+                             'Rig': [], 'Channel_annotation_file': []}
     for i in range(384):
         for position in ['AP', 'DV', 'ML', 'region']:
             ccf_channel_row['Channel_{}_{}'.format(i, position)] = []
@@ -129,6 +140,7 @@ def update_ccf_channel_table(mouse_id:str, day:int) -> pd.DataFrame:
 
     for probe in probes:
         hole = sessions_to_update[probe].values[0]
+        ccf_channel_row['session'].append(sessions_to_update['session'])
         ccf_channel_row['MID'].append(mouse_id)
         ccf_channel_row['Day'].append(day)
         ccf_channel_row['Probe'].append(probe[-1])
@@ -155,7 +167,8 @@ def update_ccf_channel_table(mouse_id:str, day:int) -> pd.DataFrame:
                 ccf_channel_row['Channel_{}_ML'.format(index)].append(r.ML)
 
                 if pd.isna(r.region):
-                    ccf_channel_row['Channel_{}_region'.format(index)].append('No Area')
+                    region = assign_label(ACRONYM_MAP, ANNOTATION_VOLUME, (r.AP, r.DV, r.ML))
+                    ccf_channel_row['Channel_{}_region'.format(index)].append(region)
                 else:
                     ccf_channel_row['Channel_{}_region'.format(index)].append(r.region)
 
@@ -169,7 +182,7 @@ def update_ccf_channel_table(mouse_id:str, day:int) -> pd.DataFrame:
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    with open(pathlib.Path('//allen/programs/mindscope/workgroups/dynamicrouting/dynamic_gating_insertions/area_center_of_mass.json'), 'r') as f:
+    with open(pathlib.Path('//allen/programs/mindscope/workgroups/dynamicrouting/dynamic_gating_insertions/area_center_of_mass.json'), 'rb') as f:
         area_center_of_mass = json.load(f)
 
     structure_tree = pd.read_csv(pathlib.Path('//allen/programs/mindscope/workgroups/dynamicrouting/dynamic_gating_insertions/ccf_structure_tree_2017.csv'))

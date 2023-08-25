@@ -65,7 +65,7 @@ def count_channels_in_region(group, region):
      return 0
 
 def insertion_hit_rate_table(df_insertion_channel_coords:pd.DataFrame):
-    dict_insertion_hit_rate = {'MID': [], 'Day': [], 'Probe': [], 'Implant': [], 'Hole': [], 'Rig': []}
+    dict_insertion_hit_rate: dict = {'session': [], 'MID': [], 'Day': [], 'Probe': [], 'Implant': [], 'Hole': [], 'Rig': []}
 
     for area in area_center_of_mass:
         dict_insertion_hit_rate[area] = []
@@ -85,6 +85,7 @@ def insertion_hit_rate_table(df_insertion_channel_coords:pd.DataFrame):
                 number_of_hits = count_channels_in_region(regions_abbreviated, area)
                 dict_insertion_hit_rate[area].append(number_of_hits)
 
+        dict_insertion_hit_rate['session'].append(row.session)
         dict_insertion_hit_rate['MID'].append(row.MID)
         dict_insertion_hit_rate['Day'].append(row.Day)
         dict_insertion_hit_rate['Probe'].append(row.Probe)
