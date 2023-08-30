@@ -56,7 +56,7 @@ def min_displacement_vector_table(df_insertion_channel_coords:np.array):
     df_min_distance_insertion = pd.DataFrame(dict_closest_point_insertion)
     df_min_distance_insertion.to_sql('vector_to_region_com', con=ENGINE, schema=None, if_exists='replace')
 
-def min_distance_table(df_insertion_channel_coords:np.array):
+def min_distance_table(df_insertion_channel_coords:np.ndarray):
     dict_min_distance_insertion = {'session': [], 'MID': [], 'Day': [], 'Probe': [], 'Implant': [], 'Hole': [], 'Rig': []}
 
     for area in area_center_of_mass:

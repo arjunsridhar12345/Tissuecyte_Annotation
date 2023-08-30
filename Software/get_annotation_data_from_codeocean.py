@@ -1,4 +1,3 @@
-import os
 import pathlib
 import requests
 import npc_lims
@@ -62,20 +61,24 @@ def get_capsule_results(capsule_id: str, session_id:str) -> None:
     raw_data_asset = npc_lims.codeocean.get_session_raw_data_asset(session_id)
     sorted_data_asset = npc_lims.codeocean.get_session_sorted_data_asset(session_id)
 
-    capusle_run = npc_lims.codeocean.codeocean_client.run_capsule(capsule_id, [{'id': raw_data_asset['id'], 'mount': raw_data_asset['name']},
+    capsule_run = npc_lims.codeocean.codeocean_client.run_capsule(capsule_id, [{'id': raw_data_asset['id'], 'mount': raw_data_asset['name']},
                                                                                {'id': sorted_data_asset['id'], 'mount': sorted_data_asset['name']}])
     
-    if not capusle_run.ok:
-        raise RuntimeError('Annotation Capsule failed. Check codeocean')
+    capsule_run.raise_for_status()
     
-    capusle_computations = npc_lims.codeocean_client.get_capsule_computations(capsule_id).json()
+    capusle_computations = npc_lims.codeocean_client.get_capsule_computations(capsule_id)
+    capusle_computations.raise_for_status()
     while True:
-        if 'end_status' in capusle_computations[0] and capusle_computations[0]['end_status'] == 'succeeded':
+        capsule_runs = capusle_computations.json()
+        states = [run["state"] for run in capsule_runs]
+
+        if all(state == "completed" for state in states):
             break
 
-        capusle_computations = npc_lims.codeocean.codeocean_client.get_capsule_computations(capsule_id).json()
+        capusle_computations = npc_lims.codeocean.codeocean_client.get_capsule_computations(capsule_id)
+        capusle_computations.raise_for_status()
     
-    computation_id = capusle_computations[0]['id']
+    computation_id = capusle_computations.json()[0]['id']
     result_items = npc_lims.codeocean_client.get_list_result_items(computation_id).json()['items']
     download_metrics_spike_data(result_items, computation_id, session_id)
 
