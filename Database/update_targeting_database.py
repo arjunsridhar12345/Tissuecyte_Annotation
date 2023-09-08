@@ -166,7 +166,7 @@ def update_ccf_channel_table(mouse_id:str, day:int) -> pd.DataFrame:
                 ccf_channel_row['Channel_{}_DV'.format(index)].append(r.DV)
                 ccf_channel_row['Channel_{}_ML'.format(index)].append(r.ML)
 
-                if pd.isna(r.region):
+                if pd.isna(r.region) or r.region == 'out of brain':
                     region = assign_label(ACRONYM_MAP, ANNOTATION_VOLUME, (r.AP, r.DV, r.ML))
                     ccf_channel_row['Channel_{}_region'.format(index)].append(region)
                 else:

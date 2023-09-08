@@ -177,7 +177,7 @@ def create_insertion_channel_table():
                     insertion_channel['Channel_{}_DV'.format(index)].append(r.DV)
                     insertion_channel['Channel_{}_ML'.format(index)].append(r.ML)
 
-                    if pd.isna(r.region):
+                    if pd.isna(r.region) or r.region == 'out of brain':
                         region = assign_label(ACRONYM_MAP, ANNOTATION_VOLUME, (r.AP, r.DV, r.ML))
                         insertion_channel['Channel_{}_region'.format(index)].append(region)
                     else:

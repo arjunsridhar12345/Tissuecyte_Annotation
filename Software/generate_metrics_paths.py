@@ -7,6 +7,12 @@ import pickle
 import pathlib
 import glob
 from typing import Union
+import pydbhub.dbhub as dbhub
+import npc_session
+
+DB_NAME = "jobs.db"
+DB_OWNER = "svc_neuropix"
+API_KEY = os.getenv("DBHUB_API_KEY")
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--mouseID', help='Mouse ID of session', required=True)
@@ -62,6 +68,51 @@ def generate_templeton_metric_path_days(mouse_id: str, base_path: str, record_no
                         metrics_path_days[date] = [waveform_metrics_path]
                     else:
                         metrics_path_days[date].append(waveform_metrics_path)
+
+    #print(metrics_path_days)
+    return metrics_path_days
+
+# gets the path for the metrics csv
+def generate_metrics_path_days_codeocean(base_path, mouse_id):
+    connection = dbhub.Dbhub(API_KEY, db_name=DB_NAME, db_owner=DB_OWNER)
+    statement = (
+        f"""SELECT date FROM STATUS WHERE subject_id = {mouse_id}"""
+    )
+    response = connection.Query(statement)[0]
+    dates = sorted([date['date'] for date in response])
+
+    mouse_dirs = get_metrics_directory(base_path, mouse_id)
+    days = [dates.index(date) + 1 for date in dates if npc_session.SessionRecord(f'{mouse_id}_{date}').id in mouse_dirs]
+    probe_metrics_dirs = []
+
+    for directory in mouse_dirs:
+        probe_dirs = [d for d in os.listdir(os.path.join(base_path, directory)) if os.path.isdir(os.path.join(base_path, directory, d))]
+
+        probe_metrics_dirs.append([os.path.join(base_path, directory, d, 'continuous') for d in probe_dirs if os.path.exists(os.path.join(base_path, directory, d, 'continuous'))])
+    
+    metrics_path_days = {}
+    #days = [1, 2, 3, 4]
+    i = 0
+    for directory in sorted(probe_metrics_dirs):
+        if len(directory) > 0:
+            for d in directory:
+                #date = d[d.index('_')+1:]
+                #date = date[date.index('_')+1:date.index('\\')]
+                date = days[i]
+                files = [os.path.join(d, f) for f in os.listdir(d)]
+                for f in files:
+                    metrics = os.listdir(os.path.join(d, f))
+
+                    waveform_metrics_path = [os.path.join(d, f, m) for m in metrics if m == 'metrics.csv']
+   
+                    if len(waveform_metrics_path) > 0:
+                        waveform_metrics_path = waveform_metrics_path[0]
+                        if date not in metrics_path_days:
+                            metrics_path_days[date] = [waveform_metrics_path]
+                        else:
+                            metrics_path_days[date].append(waveform_metrics_path)
+                
+        i += 1
 
     #print(metrics_path_days)
     return metrics_path_days
@@ -129,11 +180,11 @@ def generate_metrics_path_ephys(base_path: pathlib.Path, mouse_id: str):
     return metrics_path_days
 
 if __name__ == '__main__':
-    base_path = pathlib.Path('//allen/programs/mindscope/workgroups/dynamicrouting/datajoint\inbox/ks_paramset_idx_1')
+    base_path = pathlib.Path('//allen/programs/mindscope/workgroups/np-exp')
     output_path = pathlib.Path('//allen/programs/mindscope/workgroups/np-behavior')
 
-    args = parser.parse_args()
-    mouse_id = args.mouseID
-
+    #args = parser.parse_args()
+    #mouse_id = args.mouseID
+    mouse_id = '670180'
     #generate_metrics_path_days(base_path, output_path, mouse_id)
-    generate_metrics_path_days(base_path, mouse_id)
+    generate_metrics_path_days_codeocean(base_path, mouse_id)

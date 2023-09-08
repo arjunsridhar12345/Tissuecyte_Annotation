@@ -22,7 +22,7 @@ import sys
 from get_tissuecyte_info import get_tc_info
 from warp_image import warp_channels
 import xmltodict
-from generate_metrics_paths import generate_metrics_path_days, generate_templeton_metric_path_days, generate_metrics_path_ephys
+from generate_metrics_paths import generate_metrics_path_days, generate_templeton_metric_path_days, generate_metrics_path_ephys, generate_metrics_path_days_codeocean
 import visvis as vis
 from warp_image import warp_execute, cluster_annotations
 import pickle
@@ -420,7 +420,7 @@ class VolumeAlignment(QWidget):
             if not dr:
                 self.waveMetricsPath = generate_metrics_path_ephys(self.basePath, self.mouseID)
             else:
-                self.waveMetricsPath = generate_metrics_path_days(self.basePath, self.mouseID)
+                self.waveMetricsPath = generate_metrics_path_days_codeocean(self.basePath, self.mouseID)
 
             #self.days = sorted(list(self.waveMetricsPath.keys()))
             self.waveform_metrics = pd.read_csv(os.path.join(self.basePath, '1178173272_608671_20220518/1178173272_608671_20220518_probeB_sorted/continuous/Neuropix-PXI-100.0', 

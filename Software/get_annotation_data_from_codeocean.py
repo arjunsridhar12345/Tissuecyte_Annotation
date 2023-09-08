@@ -84,8 +84,9 @@ def get_capsule_results(capsule_id: str, session_id:str) -> None:
 
 def get_annotation_data_for_mouse(mouse_id:str, capsule_id:str):
     sessions = npc_lims.get_sessions_with_data_assets(mouse_id)
-    for session in sessions:
-        get_capsule_results(capsule_id, session.id)
+    session_ids = sorted(tuple(session.id for session in sessions))
+    for session_id in session_ids:
+        get_capsule_results(capsule_id, session_id)
     
     get_correlation_data(mouse_id)
 

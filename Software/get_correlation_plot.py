@@ -6,7 +6,7 @@ import argparse
 from PyQt5 import QtGui
 from matplotlib import cm
 import matplotlib.pyplot as plt
-from generate_metrics_paths import generate_metrics_path_days
+from generate_metrics_paths import generate_metrics_path_days, generate_metrics_path_days_codeocean
 import pickle
 import argparse
 
@@ -118,7 +118,7 @@ class qcChecker():
             pickle.dump(data_img, f)
 
 def get_correlation_data(mouse_id:str):
-    metrics_paths = generate_metrics_path_days(pathlib.Path('//allen/programs/mindscope/workgroups/np-exp'), mouse_id)
+    metrics_paths = generate_metrics_path_days_codeocean(pathlib.Path('//allen/programs/mindscope/workgroups/np-exp'), mouse_id)
     probe_letters = ['A', 'B', 'C', 'D', 'E', 'F']
 
     for day in metrics_paths:

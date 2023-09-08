@@ -5,11 +5,12 @@ def assign_label(acronym_map:dict[str, int], annotation_volume:np.ndarray, point
     labels = tuple(acronym_map.keys())
 
     structure_id = annotation_volume[point[0], point[1], point[2]]
-    if structure_id in structure_ids:
+
+    if point[1] < 0:
+        label = 'root'
+    elif structure_id in structure_ids:
         index = structure_ids.index(structure_id)
         label = labels[index]
-    elif point[1] < 0:
-        label = 'out of brain'
     else:
         label = 'root'
     
