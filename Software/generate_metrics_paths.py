@@ -185,6 +185,6 @@ if __name__ == '__main__':
 
     #args = parser.parse_args()
     #mouse_id = args.mouseID
-    mouse_id = '670180'
+    mouse_id = '668759'
     #generate_metrics_path_days(base_path, output_path, mouse_id)
     generate_metrics_path_days_codeocean(base_path, mouse_id)

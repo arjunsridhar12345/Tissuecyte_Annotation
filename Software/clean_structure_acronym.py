@@ -54,7 +54,7 @@ def strip_subregions_layers(areastr):
 
 def get_structure_acronym(point:tuple[int, int, int]) -> str:
     if point[1] < 0:
-        return 'root'
+        return 'out of brain'
     
     structure_ids = tuple(ACRONYM_MAP.values())
     labels = tuple(ACRONYM_MAP.keys())
