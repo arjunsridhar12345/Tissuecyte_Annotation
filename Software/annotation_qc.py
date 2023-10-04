@@ -23,14 +23,16 @@ def get_surface_image_and_insertion_json_paths(session_id: str, templeton=False)
         mouse_dirs = sorted(generate_metrics_paths.get_metrics_directory(templeton_base_path, str(session.subject.id)))
         session_directory = templeton_base_path / [mouse_dir for mouse_dir in mouse_dirs if session.date.id in mouse_dir][0]
     
-    surface_image_path = next(session_directory.glob('*pre_insertion_surface_image.png'))
+    surface_image_path = next(session_directory.glob('*pre_insertion_surface_image*'))
 
+    """
     if not templeton:
         insertions_json_path = next(insertion_records_directory.glob(f'{date}*'))
     else:
         insertions_json_path = next(insertion_records_templeton.glob(f'{date}*'))
-
-    return surface_image_path, insertions_json_path
+    """
+    
+    return surface_image_path
 
 
 def draw_points_on_holes(image: np.ndarray, holes_letters: dict[str, str]) -> np.ndarray:
@@ -71,7 +73,7 @@ def draw_points_on_holes(image: np.ndarray, holes_letters: dict[str, str]) -> np
     return image
 
 if __name__ == '__main__':
-    surface_image_path, insertion_json_path = get_surface_image_and_insertion_json_paths('670181_20230718', templeton=True)
+    surface_image_path, insertion_json_path = get_surface_image_and_insertion_json_paths('649943_20230214', templeton=False)
     implant_image = cv2.imread(pathlib.Path(r"\\allen\programs\mindscope\workgroups\dynamicrouting\arjun\2002_implant.png").as_posix())
     surface_image = Image.open(surface_image_path)
     enhanced_object = ImageEnhance.Brightness(surface_image)

@@ -9,10 +9,8 @@ import glob
 from typing import Union
 import pydbhub.dbhub as dbhub
 import npc_session
+import npc_lims
 
-DB_NAME = "jobs.db"
-DB_OWNER = "svc_neuropix"
-API_KEY = os.getenv("DBHUB_API_KEY")
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--mouseID', help='Mouse ID of session', required=True)
@@ -74,12 +72,12 @@ def generate_templeton_metric_path_days(mouse_id: str, base_path: str, record_no
 
 # gets the path for the metrics csv
 def generate_metrics_path_days_codeocean(base_path, mouse_id):
-    connection = dbhub.Dbhub(API_KEY, db_name=DB_NAME, db_owner=DB_OWNER)
-    statement = (
-        f"""SELECT date FROM STATUS WHERE subject_id = {mouse_id}"""
-    )
-    response = connection.Query(statement)[0]
-    dates = sorted([date['date'] for date in response])
+    sessions_mouse = []
+    for session_info in npc_lims.get_tracked_sessions():
+        if mouse_id in session_info.id:
+            sessions_mouse.append(session_info.id)
+
+    dates = sorted([session.date for session in sessions_mouse])
 
     mouse_dirs = get_metrics_directory(base_path, mouse_id)
     days = [dates.index(date) + 1 for date in dates if npc_session.SessionRecord(f'{mouse_id}_{date}').id in mouse_dirs]
@@ -185,6 +183,6 @@ if __name__ == '__main__':
 
     #args = parser.parse_args()
     #mouse_id = args.mouseID
-    mouse_id = '668759'
+    mouse_id = '666986'
     #generate_metrics_path_days(base_path, output_path, mouse_id)
     generate_metrics_path_days_codeocean(base_path, mouse_id)

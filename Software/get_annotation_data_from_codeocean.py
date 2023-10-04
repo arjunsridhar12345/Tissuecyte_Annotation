@@ -41,13 +41,13 @@ def download_metrics_spike_data(result_items:list[dict[str, str]], computation_i
     probes = ['A', 'B', 'C', 'D', 'E', 'F']
 
     for probe in probes:
-        download_response_metrics = npc_lims.codeocean_client.get_result_file_download_url(computation_id, pathlib.Path(folder['path'], 
+        download_response_metrics = npc_lims.get_codeocean_client().get_result_file_download_url(computation_id, pathlib.Path(folder['path'], 
                                                                                                       f'probe{probe}_metrics.csv').as_posix())
 
-        download_response_depths = npc_lims.codeocean_client.get_result_file_download_url(computation_id, pathlib.Path(folder['path'], 
+        download_response_depths = npc_lims.get_codeocean_client().get_result_file_download_url(computation_id, pathlib.Path(folder['path'], 
                                                                                                       f'probe{probe}_spike_depths.npy').as_posix())
 
-        download_response_times = npc_lims.codeocean_client.get_result_file_download_url(computation_id, pathlib.Path(folder['path'], 
+        download_response_times = npc_lims.get_codeocean_client().get_result_file_download_url(computation_id, pathlib.Path(folder['path'], 
                                                                                                       f'probe{probe}_spike_times.npy').as_posix())
         
         if download_response_metrics.ok and download_response_depths.ok and download_response_times.ok:
@@ -61,12 +61,12 @@ def get_capsule_results(capsule_id: str, session_id:str) -> None:
     raw_data_asset = npc_lims.codeocean.get_session_raw_data_asset(session_id)
     sorted_data_asset = npc_lims.codeocean.get_session_sorted_data_asset(session_id)
 
-    capsule_run = npc_lims.codeocean.codeocean_client.run_capsule(capsule_id, [{'id': raw_data_asset['id'], 'mount': raw_data_asset['name']},
+    capsule_run = npc_lims.codeocean.get_codeocean_client().run_capsule(capsule_id, [{'id': raw_data_asset['id'], 'mount': raw_data_asset['name']},
                                                                                {'id': sorted_data_asset['id'], 'mount': sorted_data_asset['name']}])
     
     capsule_run.raise_for_status()
     
-    capusle_computations = npc_lims.codeocean_client.get_capsule_computations(capsule_id)
+    capusle_computations = npc_lims.get_codeocean_client().get_capsule_computations(capsule_id)
     capusle_computations.raise_for_status()
     while True:
         capsule_runs = capusle_computations.json()
@@ -75,11 +75,11 @@ def get_capsule_results(capsule_id: str, session_id:str) -> None:
         if all(state == "completed" for state in states):
             break
 
-        capusle_computations = npc_lims.codeocean.codeocean_client.get_capsule_computations(capsule_id)
+        capusle_computations = npc_lims.get_codeocean_client().get_capsule_computations(capsule_id)
         capusle_computations.raise_for_status()
     
     computation_id = capusle_computations.json()[0]['id']
-    result_items = npc_lims.codeocean_client.get_list_result_items(computation_id).json()['items']
+    result_items = npc_lims.get_codeocean_client().get_list_result_items(computation_id).json()['items']
     download_metrics_spike_data(result_items, computation_id, session_id)
 
 def get_annotation_data_for_mouse(mouse_id:str, capsule_id:str):
