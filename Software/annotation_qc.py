@@ -7,7 +7,7 @@ import cv2
 import json
 import npc_session
 
-def get_surface_image_and_insertion_json_paths(session_id: str, templeton=False) -> tuple[pathlib.Path, ...]:
+def get_surface_image_and_insertion_json_paths(session_id: str, templeton=False) -> pathlib.Path:
     date = session_id[session_id.rindex('_')+1:]
     session = npc_session.SessionRecord(session_id)
     base_path = pathlib.Path('//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot')

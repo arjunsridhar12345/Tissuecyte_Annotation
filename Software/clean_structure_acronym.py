@@ -92,6 +92,6 @@ def clean_channel_annotations(mouse_id: str) -> None:
 if __name__ == '__main__':
     args = parser.parse_args()
     #mouse_id = args.mouseID
-    mouse_ids = ['626791', '636766', '644864', '644866', '644867', '649943', '660023', '666986', '662892', '668755']
+    mouse_ids = ['620263', '620264', '628801', '636397', '644547', '646318', '649944', '662983', '668759', '670181', '670180', '670248']
     for mouse_id in mouse_ids:
         clean_channel_annotations(mouse_id)
