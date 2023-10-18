@@ -72,26 +72,4 @@ def draw_points_on_holes(image: np.ndarray, holes_letters: dict[str, str]) -> np
     
     return image
 
-if __name__ == '__main__':
-    surface_image_path, insertion_json_path = get_surface_image_and_insertion_json_paths('649943_20230214', templeton=False)
-    implant_image = cv2.imread(pathlib.Path(r"\\allen\programs\mindscope\workgroups\dynamicrouting\arjun\2002_implant.png").as_posix())
-    surface_image = Image.open(surface_image_path)
-    enhanced_object = ImageEnhance.Brightness(surface_image)
-    surface_image_enhanced = np.array(enhanced_object.enhance(2.0))
-    holes_letters: dict = {}
-
-    with open(insertion_json_path) as f:
-        insertion_json = json.load(f)['probe_insertions']
-
-    for probe in insertion_json:
-        if 'probe' in probe:
-            probe_dict = insertion_json[probe]
-            holes_letters[probe_dict['hole']] = probe_dict['letter']
-
-    drawing_implant = draw_points_on_holes(implant_image, holes_letters)
-
-    fig, ax = plt.subplots(1, 2)
-    ax[0].imshow(surface_image_enhanced)
-    ax[1].imshow(drawing_implant)
-    plt.show()
     

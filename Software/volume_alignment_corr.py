@@ -184,21 +184,27 @@ class PlotDisplayItem():
             self.channelsRecorded = self.frequencyCounts[:, 0].tolist()
             self.channelsOriginal = []
 
-            for i in range(384):
+            if np.max(self.frequencyCounts) > 384:
+                self.max_range = 768
+            else:
+                self.max_range = 384
+
+            for i in range(self.max_range):
                 if i in self.channelsRecorded:
                     ind = self.channelsRecorded.index(i)
                     self.channelsOriginal.append([i, self.frequencyCounts[ind, 1]])
                 else:
                     self.channelsOriginal.append([i, 0])
-           
-            self.channelsOriginal = [[self.channelsOriginal[i][1], 384 - i - 1 + 256] for i in range(len(self.channelsOriginal))]
+
+            print('Max range', self.max_range)
+            self.channelsOriginal = [[self.channelsOriginal[i][1], self.max_range - i - 1 + 256] for i in range(len(self.channelsOriginal))]
             
             x_val = [p[0] * 10 for p in self.channelsOriginal]
             conv = np.ones(10)
 
             smoothed = np.convolve(x_val, conv, mode='same')
             smoothed = smoothed / np.sum(conv)
-            self.channelsOriginal = [[smoothed[i] - 100, self.channelsOriginal[i][1]] for i in range(384)]
+            self.channelsOriginal = [[smoothed[i] - 100, self.channelsOriginal[i][1]] for i in range(len(self.channelsOriginal))]
 
             self.ogChannelsShift = [[p[0] - 200, p[1]] for p in self.channelsOriginal]
 
@@ -210,7 +216,7 @@ class PlotDisplayItem():
 
     def updatePlotChannelPositions(self, channel_positions:list):
         self.ogChannelsShift = [[p[0] - 200, p[1]] for p in channel_positions]
-        self.ogChannelsShift = [[self.ogChannelsShift[i][0], 384 - i - 1 + 256] for i in range(384)]
+        self.ogChannelsShift = [[self.ogChannelsShift[i][0], self.max_range - i - 1 + 256] for i in range(self.max_range)]
 
         self.adj = [[i, i + 1] for i in range(len(self.channelsOriginal) - 1)]
         self.ogChannelsPlot.setData(pos=np.array(self.ogChannelsShift, dtype=float), adj=np.array(self.adj, dtype=int))
@@ -231,8 +237,12 @@ class PlotDisplayItem():
 
         conv = np.ones(10)
         self.channelsOriginal = []
+        if max(peak_values) > 384:
+            self.max_range = 768
+        else:
+            self.max_range = 384
 
-        for i in range(384):
+        for i in range(self.max_range):
             if i in peak_values:
                 """
                 index = peak_values.index(i)
@@ -243,16 +253,16 @@ class PlotDisplayItem():
                 #conv[index] = 1
                 """
                 index = peak_values.index(i)
-                self.channelsOriginal.append([values[index], 384 - i - 1 + 256])
+                self.channelsOriginal.append([values[index], self.max_range - i - 1 + 256])
             else:
-                self.channelsOriginal.append([0, 384 - i - 1 + 256])
+                self.channelsOriginal.append([0, self.max_range - i - 1 + 256])
         
         x_val = [p[0] for p in self.channelsOriginal]
         print('X_val', len(x_val))
         smoothed = np.convolve(x_val, conv, mode='same')
         smoothed = smoothed / np.sum(conv)
         #print(smoothed.shape)
-        for i in range(384):
+        for i in range(self.max_range):
             if scale_value != 0:
                 self.channelsOriginal[i] = [(smoothed[i] / scale_value) - shift_value, self.channelsOriginal[i][1]]
             else:
@@ -1938,9 +1948,18 @@ class VolumeAlignment(QWidget):
         rot = np.rot90(np.rot90(data['img']))
         flip = np.flipud(rot)
         #print(flip.shape)
+
+        
         self.plotImage.setImage(flip)
-        transform = [data['scale'][0], 0., 0., 0., data['scale'][1], 0., -700.,
-                        self.plots['unit_density'].ogChannelsShift[-1][1], 1.]
+        peak_channels = pd.read_csv(self.path)['peak_channel']
+
+        if peak_channels.max() > 383:
+            transform = [data['scale'][0], 0., 0., 0., data['scale'][1], 0., -1200.,
+                            self.plots['unit_density'].ogChannelsShift[-1][1], 1.]
+        else:
+            transform = [data['scale'][0], 0., 0., 0., data['scale'][1], 0., -700.,
+                self.plots['unit_density'].ogChannelsShift[-1][1], 1.]
+
         self.plotImage.setTransform(QtGui.QTransform(*transform))
         cmap = data.get('cmap', [])
         

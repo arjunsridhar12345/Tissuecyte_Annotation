@@ -8,6 +8,7 @@ from matplotlib import cm
 import matplotlib.pyplot as plt
 from generate_metrics_paths import generate_metrics_path_days, generate_metrics_path_days_codeocean
 import pickle
+import pandas as pd
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -15,10 +16,11 @@ parser.add_argument('--mouseID', help='Mouse ID of session')
 
 # class for qc on kilosort output
 class qcChecker():
-    def __init__(self, kilo_sort_path:pathlib.Path, mouse_id:str, probe:str):
+    def __init__(self, kilo_sort_path:pathlib.Path, mouse_id:str, probe:str, scale:int=384):
         self.kiloPath = kilo_sort_path
         self.mouseID = mouse_id
         self.probe = probe
+        self.scale = scale
 
         self.spikeDepths = np.load(pathlib.Path(self.kiloPath, 'spike_depths.npy'),  mmap_mode='r') # spike depths
         self.spikeTimes = np.load(pathlib.Path(self.kiloPath, 'spike_times.npy'), mmap_mode='r')
@@ -96,7 +98,7 @@ class qcChecker():
                                           T_BIN, D_BIN, ylim=[chn_min, chn_max])
         corr = np.corrcoef(R)
         corr[np.isnan(corr)] = 0
-        scale = 384 / corr.shape[0]
+        scale = self.scale / corr.shape[0]
    
         data_img = {
                 'img': corr,
@@ -125,14 +127,19 @@ def get_correlation_data(mouse_id:str):
         metric_paths_day = metrics_paths[day]
 
         for metric_path in metric_paths_day:
+            peak_channels = pd.read_csv(metric_path)['peak_channel']
             kilo_sort_path = pathlib.Path(metric_path).parent
             letter = [probe_letter for probe_letter in probe_letters if 'probe{}'.format(probe_letter) in str(kilo_sort_path)][0]
             probe = letter + str(day)
                     
             if not pathlib.Path('//allen/programs/mindscope/workgroups/np-behavior/tissuecyte/{}/image_plots/{}_corr.pickle'.format(mouse_id, probe)).exists():
-                qcChecker(kilo_sort_path, mouse_id, probe).get_correlation_data_img()
+                if peak_channels.max() > 383:
+                    qcChecker(kilo_sort_path, mouse_id, probe, scale=768).get_correlation_data_img()
+                else:
+                    qcChecker(kilo_sort_path, mouse_id, probe).get_correlation_data_img()
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    mouse = args.mouseID
+    #mouse = args.mouseID
+    mouse = '668755'
     get_correlation_data(mouse)

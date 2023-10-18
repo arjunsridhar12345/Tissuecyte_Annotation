@@ -57,12 +57,18 @@ def download_metrics_spike_data(result_items:list[dict[str, str]], computation_i
         else:
             warnings.warn(f'Results could not be obtained for probe{probe} - Check codeocean capsule for details', stacklevel=2)
 
-def get_capsule_results(capsule_id: str, session_id:str) -> None:
+def get_capsule_results(capsule_id: str, session_id:str, session_id_potential_deep:str) -> None:
     raw_data_asset = npc_lims.codeocean.get_session_raw_data_asset(session_id)
     sorted_data_asset = npc_lims.codeocean.get_session_sorted_data_asset(session_id)
+    sorted_data_deep_asset = npc_lims.get_session_sorted_data_asset(session_id_potential_deep)
 
-    capsule_run = npc_lims.codeocean.get_codeocean_client().run_capsule(capsule_id, [{'id': raw_data_asset['id'], 'mount': raw_data_asset['name']},
+    if sorted_data_asset['name'] == sorted_data_deep_asset['name']:
+        capsule_run = npc_lims.codeocean.get_codeocean_client().run_capsule(capsule_id, [{'id': raw_data_asset['id'], 'mount': raw_data_asset['name']},
                                                                                {'id': sorted_data_asset['id'], 'mount': sorted_data_asset['name']}])
+    else:
+        capsule_run = npc_lims.codeocean.get_codeocean_client().run_capsule(capsule_id, [{'id': raw_data_asset['id'], 'mount': raw_data_asset['name']},
+                                                                               {'id': sorted_data_asset['id'], 'mount': sorted_data_asset['name']},
+                                                                               {'id': sorted_data_deep_asset['id'], 'mount': sorted_data_deep_asset['name']}])
     
     capsule_run.raise_for_status()
     
@@ -82,15 +88,27 @@ def get_capsule_results(capsule_id: str, session_id:str) -> None:
     result_items = npc_lims.get_codeocean_client().get_list_result_items(computation_id).json()['items']
     download_metrics_spike_data(result_items, computation_id, session_id)
 
+def get_potential_deep_sessions(sessions_ids:list[str]) -> list[str]:
+    session_ids_potential_deep = []
+    for session_id in sessions_ids:
+        session_more_than_one = session_id[0:session_id.rindex('_')] + '_1'
+        session_ids_potential_deep.append(session_more_than_one)
+    
+    return session_ids_potential_deep
+
 def get_annotation_data_for_mouse(mouse_id:str, capsule_id:str):
     sessions = npc_lims.get_sessions_with_data_assets(mouse_id)
     session_ids = sorted(tuple(session.id for session in sessions))
-    for session_id in session_ids:
-        get_capsule_results(capsule_id, session_id)
+    session_ids = [session_ids[0], session_ids[2], session_ids[3]]
+    session_ids_potential_deep = get_potential_deep_sessions(session_ids)
+
+    for i in range(len(session_ids)):
+        get_capsule_results(capsule_id, session_ids[i], session_ids_potential_deep[i])
     
     get_correlation_data(mouse_id)
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    mouse_id = args.mouseID
+    #mouse_id = args.mouseID
+    mouse_id = '668755'
     get_annotation_data_for_mouse(mouse_id, '6c4dad63-7fdf-4dfe-82f1-f9b24e924d31')
