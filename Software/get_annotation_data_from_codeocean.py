@@ -99,7 +99,6 @@ def get_potential_deep_sessions(sessions_ids:list[str]) -> list[str]:
 def get_annotation_data_for_mouse(mouse_id:str, capsule_id:str):
     sessions = npc_lims.get_sessions_with_data_assets(mouse_id)
     session_ids = sorted(tuple(session.id for session in sessions))
-    session_ids = [session_ids[0], session_ids[2], session_ids[3]]
     session_ids_potential_deep = get_potential_deep_sessions(session_ids)
 
     for i in range(len(session_ids)):
