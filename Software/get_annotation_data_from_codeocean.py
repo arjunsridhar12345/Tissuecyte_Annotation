@@ -109,6 +109,5 @@ def get_annotation_data_for_mouse(mouse_id:str, capsule_id:str):
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    #mouse_id = args.mouseID
-    mouse_id = '668755'
+    mouse_id = args.mouseID
     get_annotation_data_for_mouse(mouse_id, '6c4dad63-7fdf-4dfe-82f1-f9b24e924d31')

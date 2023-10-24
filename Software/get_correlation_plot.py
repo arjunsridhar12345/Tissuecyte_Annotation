@@ -16,11 +16,12 @@ parser.add_argument('--mouseID', help='Mouse ID of session')
 
 # class for qc on kilosort output
 class qcChecker():
-    def __init__(self, kilo_sort_path:pathlib.Path, mouse_id:str, probe:str, scale:int=384):
+    def __init__(self, kilo_sort_path:pathlib.Path, mouse_id:str, probe:str, scale:int=384, channel_max:int=3840):
         self.kiloPath = kilo_sort_path
         self.mouseID = mouse_id
         self.probe = probe
         self.scale = scale
+        self.channel_max = channel_max
 
         self.spikeDepths = np.load(pathlib.Path(self.kiloPath, 'spike_depths.npy'),  mmap_mode='r') # spike depths
         self.spikeTimes = np.load(pathlib.Path(self.kiloPath, 'spike_times.npy'), mmap_mode='r')
@@ -92,7 +93,7 @@ class qcChecker():
         D_BIN = 40
 
         chn_min = np.min(np.r_[0, self.spikeDepths[self.spikeIdx][self.kpIdx]])
-        chn_max = np.max(np.r_[3840, self.spikeDepths[self.spikeIdx][self.kpIdx]])
+        chn_max = np.max(np.r_[self.channel_max, self.spikeDepths[self.spikeIdx][self.kpIdx]])
         R, times, depths = self.bincount2D(self.spikeTimes[self.spikeIdx][self.kpIdx],
                                           self.spikeDepths[self.spikeIdx][self.kpIdx],
                                           T_BIN, D_BIN, ylim=[chn_min, chn_max])
@@ -105,7 +106,7 @@ class qcChecker():
                 'scale': np.array([scale, scale]),
                 'levels': np.array([np.min(corr), np.max(corr)]),
                 'offset': np.array([0, 0]),
-                'xrange': np.array([0, 384]),
+                'xrange': np.array([0, self.channel_max / 10]),
                 'cmap': 'viridis',
                 'title': 'Correlation',
                 'xaxis': 'Distance from probe tip (um)'
@@ -134,7 +135,7 @@ def get_correlation_data(mouse_id:str):
                     
             if not pathlib.Path('//allen/programs/mindscope/workgroups/np-behavior/tissuecyte/{}/image_plots/{}_corr.pickle'.format(mouse_id, probe)).exists():
                 if peak_channels.max() > 383:
-                    qcChecker(kilo_sort_path, mouse_id, probe, scale=768).get_correlation_data_img()
+                    qcChecker(kilo_sort_path, mouse_id, probe, scale=768, channel_max=7680).get_correlation_data_img()
                 else:
                     qcChecker(kilo_sort_path, mouse_id, probe).get_correlation_data_img()
 

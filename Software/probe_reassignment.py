@@ -28,6 +28,9 @@ from preprocess_generation import generateImages
 from scipy.spatial.transform import Rotation as R
 import pickle
 import paramiko
+import annotation_qc_utils as utils
+import sqlite3
+from sqlalchemy import create_engine
 
 #class pandasModel(QAbstractTableModel):
 
@@ -35,6 +38,18 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--mouseID', help='Mouse ID of session', required=True)
 parser.add_argument('--user', help='Username for hpc', required=True)
 parser.add_argument('--password', help='Password for hpc', required=True)
+
+# ------------------------------------------------------------------------------------
+# allow integers >8 bytes to be stored in sqlite3
+sqlite3.register_adapter(np.int64, lambda val: int(val))
+sqlite3.register_adapter(np.int32, lambda val: int(val))
+# ------------------------------------------------------------------------------------
+DB_PATH = pathlib.Path('//allen/programs/mindscope/workgroups/dynamicrouting/dynamic_gating_insertions/dr_master.db')
+# with contextlib.suppress(OSError):
+#     DB_PATH.unlink()
+sqlite3.connect(DB_PATH).close()
+DB = f"sqlite:///{DB_PATH}"
+ENGINE = create_engine(DB, echo=False)
 
 class AnnotationProbesViewer(QWidget):
     # initialize fields
@@ -135,6 +150,8 @@ class AnnotationProbesViewer(QWidget):
         self.generateButton = QPushButton('Generate Images')
         self.generateButton.clicked.connect(self.generateImages)
 
+        self.vectorButton = QPushButton('View annotation vectors')
+        self.vectorButton.clicked.connect(self.viewAnnotationVectors)
 
         self.updateButton = QPushButton('Reassign Probe')
         self.updateButton.clicked.connect(self.updateProbe)
@@ -179,6 +196,7 @@ class AnnotationProbesViewer(QWidget):
         self.hButtonLayout.addWidget(self.saveButton)
         self.labelLayout.addLayout(self.hButtonLayout)
         self.labelLayout.setAlignment(QtCore.Qt.AlignBottom)
+        self.labelLayout.addWidget(self.vectorButton)
         self.labelLayout.addWidget(self.generateButton)
 
         self.scatterLayout.addWidget(self.main_frame)
@@ -194,6 +212,16 @@ class AnnotationProbesViewer(QWidget):
         self.mainLayout.addLayout(self.scatterLayout)
         self.setLayout(self.mainLayout)
         self.showMaximized()
+
+    def viewAnnotationVectors(self):
+        df_sessions_metadata = pd.read_sql_table('session_metadata', con=ENGINE.connect())
+        df_sessions_metadata = df_sessions_metadata[df_sessions_metadata['MID'] == int(self.mouseID)]
+        insertions = utils.insertion_holes_from_db_metadata(df_sessions_metadata)
+
+        surface_coords = utils.get_surface_coords(self.annotations)
+        ann_vectors = utils.get_annotation_vectors(surface_coords)
+        implant_vectors = utils.get_implant_vectors(insertions)
+        utils.plot_vectors_arjun(ann_vectors, implant_vectors, surface_coords)
 
     # generate the image slice, mask, and overlay for the probe
     def generateImages(self):
