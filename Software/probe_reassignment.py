@@ -150,8 +150,19 @@ class AnnotationProbesViewer(QWidget):
         self.generateButton = QPushButton('Generate Images')
         self.generateButton.clicked.connect(self.generateImages)
 
+        self.vectorProbeDropDown = QComboBox()
+        self.vectorProbeDropDown.addItem('A')
+        self.vectorProbeDropDown.addItem('B')
+        self.vectorProbeDropDown.addItem('C')
+        self.vectorProbeDropDown.addItem('D')
+        self.vectorProbeDropDown.addItem('E')
+        self.vectorProbeDropDown.addItem('F')
+
         self.vectorButton = QPushButton('View annotation vectors')
         self.vectorButton.clicked.connect(self.viewAnnotationVectors)
+        self.vectorLayout = QHBoxLayout()
+        self.vectorLayout.addWidget(self.vectorProbeDropDown)
+        self.vectorLayout.addWidget(self.vectorButton)
 
         self.updateButton = QPushButton('Reassign Probe')
         self.updateButton.clicked.connect(self.updateProbe)
@@ -196,7 +207,7 @@ class AnnotationProbesViewer(QWidget):
         self.hButtonLayout.addWidget(self.saveButton)
         self.labelLayout.addLayout(self.hButtonLayout)
         self.labelLayout.setAlignment(QtCore.Qt.AlignBottom)
-        self.labelLayout.addWidget(self.vectorButton)
+        self.labelLayout.addLayout(self.vectorLayout)
         self.labelLayout.addWidget(self.generateButton)
 
         self.scatterLayout.addWidget(self.main_frame)
@@ -221,7 +232,9 @@ class AnnotationProbesViewer(QWidget):
         surface_coords = utils.get_surface_coords(self.annotations)
         ann_vectors = utils.get_annotation_vectors(surface_coords)
         implant_vectors = utils.get_implant_vectors(insertions)
-        utils.plot_vectors_arjun(ann_vectors, implant_vectors, surface_coords)
+
+        probe = self.vectorProbeDropDown.currentText()
+        utils.plot_vectors_arjun(ann_vectors, implant_vectors, surface_coords, probe, self.mouseID)
 
     # generate the image slice, mask, and overlay for the probe
     def generateImages(self):

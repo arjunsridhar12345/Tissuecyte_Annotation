@@ -9,6 +9,7 @@ import os
 import pathlib
 from dr_analysis_tools import get_exp_paths
 import math
+from PIL import Image
 
 # ------------------------------------------------------------------------------------
 # allow integers >8 bytes to be stored in sqlite3
@@ -24,7 +25,7 @@ ENGINE = create_engine(DB, echo=False)
 
 NUM_DAYS = 4
 PROBES = ['A', 'B', 'C', 'D', 'E', 'F']
-
+SURFACE_IMAGE_PATH = pathlib.Path('//allen/programs/mindscope/workgroups/dynamicrouting/cabasco/composite_surface_images')
 ##in bregma (anything in mm will do)
 HOLE_COORDS_2002 = {
     'A1': [-.75, -.3],
@@ -176,37 +177,40 @@ def get_annotation_vectors(coords:dict) -> dict:
                     ann_vectors[probe + str(i+1) + '-' + k] = (np.array([-1, -1]), v[1])
     return ann_vectors
 
-def plot_vectors_arjun(annotation_vectors, implant_vectors, surface_coords):
-    for probe in PROBES:
-        vector_probes = np.array([vector for vector in list(annotation_vectors.keys()) if probe in vector]).reshape((4, 4))
+def plot_vectors_arjun(annotation_vectors, implant_vectors, surface_coords, probe: str, mouse_id:str):
+    img_path = next(SURFACE_IMAGE_PATH.glob(f'{mouse_id}*.png'))
+    img = np.array(Image.open(img_path))
+    plt.imshow(img)
+    #for probe in PROBES:
+    vector_probes = np.array([vector for vector in list(annotation_vectors.keys()) if probe in vector]).reshape((4, 4))
 
-        x_vectors = [annotation_vectors[vector][0][0] for vector in annotation_vectors.keys()]
-        y_vectors = [annotation_vectors[vector][0][1] for vector in annotation_vectors.keys()]
+    x_vectors = [annotation_vectors[vector][0][0] for vector in annotation_vectors.keys()]
+    y_vectors = [annotation_vectors[vector][0][1] for vector in annotation_vectors.keys()]
 
-        fig = plt.figure(figsize=(25,25))
-        gs = fig.add_gridspec(ncols = 4, nrows = 4)
+    fig = plt.figure(figsize=(25,25))
+    gs = fig.add_gridspec(ncols = 4, nrows = 4)
 
-        for row in range(vector_probes.shape[0]):
-            for column in range(vector_probes.shape[1]):
-                vector_key = vector_probes[row, column]
-                index = vector_key.index('-')
-                first_probe = vector_key[0:index]
-                second_probe = vector_key[index+1:]
+    for row in range(vector_probes.shape[0]):
+        for column in range(vector_probes.shape[1]):
+            vector_key = vector_probes[row, column]
+            index = vector_key.index('-')
+            first_probe = vector_key[0:index]
+            second_probe = vector_key[index+1:]
 
-                annotation_file_first_probe = surface_coords[first_probe][1]
-                annotation_file_second_probe = surface_coords[second_probe][1]
-                ax = fig.add_subplot(gs[row, column])
-                ax.set_title(vector_key)
-                ax.set_xlim(min(x_vectors)-0.5, max(x_vectors)+0.5)
-                ax.set_ylim(min(x_vectors)-0.5, max(x_vectors)+0.5)
-                if annotation_file_first_probe != 'No annotation file' and annotation_file_second_probe != 'No annotation file':
-                     ax.quiver([0, 0], [0, 0], [annotation_vectors[vector_key][0][0], implant_vectors[vector_key][0]],
-                               [annotation_vectors[vector_key][0][1], implant_vectors[vector_key][1]],
-                               angles='xy', scale_units='xy', scale=1, color=['r', 'b'])
-                else:
-                    ax.text(-2, 0, 'Nothing', size=18)
-        
-        fig.tight_layout()
+            annotation_file_first_probe = surface_coords[first_probe][1]
+            annotation_file_second_probe = surface_coords[second_probe][1]
+            ax = fig.add_subplot(gs[row, column])
+            ax.set_title(vector_key)
+            ax.set_xlim(min(x_vectors)-0.5, max(x_vectors)+0.5)
+            ax.set_ylim(min(x_vectors)-0.5, max(x_vectors)+0.5)
+            if annotation_file_first_probe != 'No annotation file' and annotation_file_second_probe != 'No annotation file':
+                    ax.quiver([0, 0], [0, 0], [annotation_vectors[vector_key][0][0], implant_vectors[vector_key][0]],
+                            [annotation_vectors[vector_key][0][1], implant_vectors[vector_key][1]],
+                            angles='xy', scale_units='xy', scale=1, color=['r', 'b'])
+            else:
+                ax.text(-2, 0, 'Nothing', size=18)
+    
+    fig.tight_layout()
     plt.show()
 
 if __name__ == '__main__':
@@ -222,4 +226,3 @@ if __name__ == '__main__':
     ann_vectors = get_annotation_vectors(coords)
 
     plot_vectors_arjun(ann_vectors, implant_vectors, coords)
-    plt.show()

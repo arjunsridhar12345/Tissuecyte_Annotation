@@ -98,6 +98,7 @@ class qcChecker():
                                           self.spikeDepths[self.spikeIdx][self.kpIdx],
                                           T_BIN, D_BIN, ylim=[chn_min, chn_max])
         corr = np.corrcoef(R)
+        corr[corr < 0] = 0
         corr[np.isnan(corr)] = 0
         scale = self.scale / corr.shape[0]
    
@@ -142,5 +143,5 @@ def get_correlation_data(mouse_id:str):
 if __name__ == '__main__':
     args = parser.parse_args()
     #mouse = args.mouseID
-    mouse = '668755'
+    mouse = '662892'
     get_correlation_data(mouse)
