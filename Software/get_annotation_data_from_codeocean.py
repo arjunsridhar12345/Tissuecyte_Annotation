@@ -4,6 +4,7 @@ import npc_lims
 import warnings
 import argparse
 from get_correlation_plot import get_correlation_data
+from typing import Union
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--mouseID', help='Mouse ID of session')
@@ -57,12 +58,15 @@ def download_metrics_spike_data(result_items:list[dict[str, str]], computation_i
         else:
             warnings.warn(f'Results could not be obtained for probe{probe} - Check codeocean capsule for details', stacklevel=2)
 
-def get_capsule_results(capsule_id: str, session_id:str, session_id_potential_deep:str) -> None:
+def get_capsule_results(capsule_id: str, session_id:str, session_id_potential_deep:Union[str, None]=None) -> None:
     raw_data_asset = npc_lims.codeocean.get_session_raw_data_asset(session_id)
     sorted_data_asset = npc_lims.codeocean.get_session_sorted_data_asset(session_id)
-    sorted_data_deep_asset = npc_lims.get_session_sorted_data_asset(session_id_potential_deep)
+    sorted_data_deep_asset = None
 
-    if sorted_data_asset['name'] == sorted_data_deep_asset['name']:
+    if session_id_potential_deep is not None:
+        sorted_data_deep_asset = npc_lims.get_session_sorted_data_asset(session_id_potential_deep)
+
+    if sorted_data_deep_asset is None:
         capsule_run = npc_lims.codeocean.get_codeocean_client().run_capsule(capsule_id, [{'id': raw_data_asset['id'], 'mount': raw_data_asset['name']},
                                                                                {'id': sorted_data_asset['id'], 'mount': sorted_data_asset['name']}])
     else:
@@ -97,12 +101,12 @@ def get_potential_deep_sessions(sessions_ids:list[str]) -> list[str]:
     return session_ids_potential_deep
 
 def get_annotation_data_for_mouse(mouse_id:str, capsule_id:str):
-    sessions = npc_lims.get_sessions_with_data_assets(mouse_id)
-    session_ids = sorted(tuple(session.id for session in sessions))
+    #sessions = npc_lims.get_sessions_with_data_assets(mouse_id)
+    session_ids = ['660023_20230808_0', '660023_20230809_0']
     session_ids_potential_deep = get_potential_deep_sessions(session_ids)
 
     for i in range(len(session_ids)):
-        get_capsule_results(capsule_id, session_ids[i], session_ids_potential_deep[i])
+        get_capsule_results(capsule_id, session_ids[i], session_id_potential_deep=session_ids_potential_deep[i])
     
     get_correlation_data(mouse_id)
 

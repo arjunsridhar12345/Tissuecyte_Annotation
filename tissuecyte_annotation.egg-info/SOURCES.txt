@@ -4,8 +4,12 @@ setup.py
 Software/__init__.py
 Software/annotation_app_pyqtgraph_10.py
 Software/annotation_app_pyqtgraph_temp.py
+Software/annotation_qc.py
+Software/annotation_qc_utils.py
+Software/clean_structure_acronym.py
 Software/colorbar.py
 Software/config_test.py
+Software/dr_analysis_tools.py
 Software/generate_mask.py
 Software/generate_mask_from_ccf.py
 Software/generate_metrics_paths.py
@@ -13,6 +17,7 @@ Software/get_annotation_data_from_codeocean.py
 Software/get_correlation_plot.py
 Software/get_spike_depths.py
 Software/get_tissuecyte_info.py
+Software/get_volume_slice.py
 Software/metrics_analysis.py
 Software/pathlib_example.py
 Software/preprocess_generation.py
