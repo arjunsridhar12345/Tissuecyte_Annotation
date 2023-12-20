@@ -10,6 +10,7 @@ import pathlib
 from dr_analysis_tools import get_exp_paths
 import math
 from PIL import Image
+import implant_coordinates
 
 # ------------------------------------------------------------------------------------
 # allow integers >8 bytes to be stored in sqlite3
@@ -27,31 +28,6 @@ NUM_DAYS = 4
 PROBES = ['A', 'B', 'C', 'D', 'E', 'F']
 SURFACE_IMAGE_PATH = pathlib.Path('//allen/programs/mindscope/workgroups/dynamicrouting/cabasco/composite_surface_images')
 ##in bregma (anything in mm will do)
-HOLE_COORDS_2002 = {
-    'A1': [-.75, -.3],
-    'A2': [-.95, 2.05],
-    'A3': [-1.25, 2.5], #guess
-    'B1': [-.92, -1.19],
-    'B2': [-.96, -3.1],
-    'B3': [-.75, .9],
-    'B4': [-1.5, .325],
-    'C1': [-1.53, -3.95],
-    'C2': [-1.59, -2.39],
-    'C3': [-2.3, -1.9],
-    'C4': [-.7, -2.05],
-    'D1': [-3.85, -3.7],
-    'D2': [-3.08, -3.55],
-    'D3': [-2.2, -3.2],
-    'E1': [-3.44, -.98],
-    'E2': [-3.56, -2.83],
-    'E3': [-3.25, 0.0],
-    'E4': [-3.6, -1.9],
-    'F1': [-2.6, 1.8],
-    'F2': [-1.74, 2.1],
-    'F3': [-2.8, .9],
-    None : [np.nan, np.nan], 
-    'default': [0, 0]
-}
 
 
 ##only works if mouse has probe_insertions jsons
@@ -85,8 +61,8 @@ def insertion_holes_from_db_metadata(df_sessions_metadata: pd.DataFrame) -> dict
     insertions:dict = {}
     
     for index, row in df_sessions_metadata.iterrows():
-        if row['implant'] != '2002':
-            raise ValueError(f"Implant {row['implant']} different from 2002")
+        if row['implant'] != '2002' and row['implant'] != '2005':
+            raise ValueError(f"Implant {row['implant']} different from 2002 or 2005")
         
         for probe in PROBES:
             probe_day = probe+str(row['day'])
@@ -107,7 +83,12 @@ def get_implant_vectors(insertions:dict, implant='2002') -> dict:
         #for multiple implants, 
         #hole_dict = 'hole_coords_' + implant
         #implant_coords[k] = np.array(hole_dict[insertions[k]])
-        implant_coords[k] = np.array(HOLE_COORDS_2002[insertions[k]])
+        if implant == '2002':
+            implant_coords[k] = np.array(implant_coordinates.HOLE_COORDS_2002[insertions[k]])
+        elif implant == '2005':
+            implant_coords[k] = np.array(implant_coordinates.HOLE_COORDS_2005[insertions[k]])
+        else:
+            raise ValueError(f'No bregma coordinates for {implant} implant')
 
     for probe in PROBES:
         probedict = {}

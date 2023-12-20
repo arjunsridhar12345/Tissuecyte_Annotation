@@ -36,6 +36,7 @@ from sqlalchemy import create_engine
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--mouseID', help='Mouse ID of session', required=True)
+parser.add_argument('--implant', help='Implant used', required=True)
 parser.add_argument('--user', help='Username for hpc', required=True)
 parser.add_argument('--password', help='Password for hpc', required=True)
 
@@ -53,10 +54,11 @@ ENGINE = create_engine(DB, echo=False)
 
 class AnnotationProbesViewer(QWidget):
     # initialize fields
-    def __init__(self, mouse_id):
+    def __init__(self, mouse_id: str, implant: str='2002'):
         super().__init__()
         # directory and csv fields
         self.mouseID = mouse_id
+        self.implant = implant
         
         self.dir = '//allen/programs/mindscope/workgroups/np-behavior/tissuecyte'
         self.workingDirectory = pathlib.Path('{}/{}'.format(self.dir, self.mouseID))
@@ -231,7 +233,7 @@ class AnnotationProbesViewer(QWidget):
 
         surface_coords = utils.get_surface_coords(self.annotations)
         ann_vectors = utils.get_annotation_vectors(surface_coords)
-        implant_vectors = utils.get_implant_vectors(insertions)
+        implant_vectors = utils.get_implant_vectors(insertions, implant=self.implant)
 
         probe = self.vectorProbeDropDown.currentText()
         utils.plot_vectors_arjun(ann_vectors, implant_vectors, surface_coords, probe, self.mouseID)
@@ -320,7 +322,7 @@ class AnnotationProbesViewer(QWidget):
             pickle.dump(self.probesGenerate, f)
 
     # populates the drop down, used when probes are updated
-    def populateDropDown(self, qProbe, qTrial):
+    def populateDropDown(self, qProbe: str, qTrial: str):
         self.probeOld.clear()
         self.trialOld.clear()
 
@@ -612,11 +614,12 @@ if __name__ == '__main__':
     mouse_id = args.mouseID
     user = args.user
     psswd = args.password
+    implant = args.implant
 
     backend = 'pyqt5'
     app = vis.use(backend)
 
     app.Create()
-    m = AnnotationProbesViewer(mouse_id)
+    m = AnnotationProbesViewer(mouse_id, implant=implant)
     app.Run()
     
