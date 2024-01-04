@@ -71,48 +71,20 @@ def generate_templeton_metric_path_days(mouse_id: str, base_path: str, record_no
     return metrics_path_days
 
 # gets the path for the metrics csv
-def generate_metrics_path_days_codeocean(base_path, mouse_id):
-    sessions_mouse = []
-    for session_info in npc_lims.get_tracked_sessions():
-        if mouse_id in session_info.id:
-            sessions_mouse.append(session_info.id)
-
+def generate_metrics_path_days_codeocean(base_path: pathlib.Path, mouse_id: str):
+    sessions_mouse = npc_lims.get_sessions_with_data_assets(mouse_id)
     dates = sorted([session.date for session in sessions_mouse])
 
     mouse_dirs = get_metrics_directory(base_path, mouse_id)
-    days = [dates.index(date) + 1 for date in dates if npc_session.SessionRecord(f'{mouse_id}_{date}').id in mouse_dirs]
-    probe_metrics_dirs = []
-
-    for directory in mouse_dirs:
-        probe_dirs = [d for d in os.listdir(os.path.join(base_path, directory)) if os.path.isdir(os.path.join(base_path, directory, d))]
-
-        probe_metrics_dirs.append([os.path.join(base_path, directory, d, 'continuous') for d in probe_dirs if os.path.exists(os.path.join(base_path, directory, d, 'continuous'))])
-    
+    days = [(dates.index(date) + 1, f'{mouse_id}_{date}_0') for date in dates if npc_session.SessionRecord(f'{mouse_id}_{date}').id in mouse_dirs]
     metrics_path_days = {}
-    #days = [1, 2, 3, 4]
-    i = 0
-    for directory in sorted(probe_metrics_dirs):
-        if len(directory) > 0:
-            for d in directory:
-                #date = d[d.index('_')+1:]
-                #date = date[date.index('_')+1:date.index('\\')]
-                date = days[i]
-                files = [os.path.join(d, f) for f in os.listdir(d)]
-                for f in files:
-                    metrics = os.listdir(os.path.join(d, f))
 
-                    waveform_metrics_path = [os.path.join(d, f, m) for m in metrics if m == 'metrics.csv']
-   
-                    if len(waveform_metrics_path) > 0:
-                        waveform_metrics_path = waveform_metrics_path[0]
-                        if date not in metrics_path_days:
-                            metrics_path_days[date] = [waveform_metrics_path]
-                        else:
-                            metrics_path_days[date].append(waveform_metrics_path)
-                
-        i += 1
+    for pair in days:
+        session = pair[1]
+        day = pair[0]
+        metrics_files = list(base_path.glob(f'{session}/*/*/*/metrics.csv'))
+        metrics_path_days[day] = metrics_files
 
-    #print(metrics_path_days)
     return metrics_path_days
 
 # gets the path for the metrics csv
@@ -183,6 +155,6 @@ if __name__ == '__main__':
 
     #args = parser.parse_args()
     #mouse_id = args.mouseID
-    mouse_id = '666986'
+    mouse_id = '681532'
     #generate_metrics_path_days(base_path, output_path, mouse_id)
     generate_metrics_path_days_codeocean(base_path, mouse_id)
