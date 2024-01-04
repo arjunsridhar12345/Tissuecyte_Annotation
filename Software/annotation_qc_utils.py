@@ -170,7 +170,7 @@ def plot_vectors_arjun(annotation_vectors, implant_vectors, surface_coords, prob
     x_vectors = [annotation_vectors[vector][0][0] for vector in annotation_vectors.keys()]
     y_vectors = [annotation_vectors[vector][0][1] for vector in annotation_vectors.keys()]
 
-    fig = plt.figure(figsize=(25,25))
+    fig = plt.figure(figsize=(8,8))
     gs = fig.add_gridspec(ncols = 4, nrows = 4)
 
     for row in range(vector_probes.shape[0]):
