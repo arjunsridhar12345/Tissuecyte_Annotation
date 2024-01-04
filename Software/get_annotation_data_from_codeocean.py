@@ -65,8 +65,8 @@ def get_capsule_results(capsule_id: str, session: npc_session.SessionRecord) -> 
     sorted_data_surface_asset = None
 
     try:
-        sorted_data_surface_asset = npc_lims.get_single_data_asset(session.with_idx(1), tuple(sorted_data_asset), 'sorted')
-    except IndexError:
+        sorted_data_surface_asset = npc_lims.get_session_sorted_data_asset(session.with_idx(1))
+    except (ValueError, IndexError):
         pass
 
     if sorted_data_surface_asset is None:
