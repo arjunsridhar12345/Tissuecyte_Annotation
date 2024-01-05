@@ -30,34 +30,6 @@ sqlite3.connect(DB_PATH).close()
 DB = f"sqlite:///{DB_PATH}"
 ENGINE = create_engine(DB, echo=False)
 
-
-def create_connection(db_file):
-    """ create a database connection to the SQLite database
-        specified by the db_file
-    :param db_file: database file
-    :return: Connection object or None
-    """
-    conn = None
-    try:
-        conn = sqlite3.connect(db_file)
-        logging.info('connection succesful')
-    except sqlite3.Error as e:
-        logging.warning(e)
-
-    return conn
-"""
-class Base(DeclarativeBase):
-    pass
-"""
-"""
-class MultiSessionRecording(Base):
-    # week_start_date
-    pass
-
-class Mouse(Base):
-    # implant
-    pass
-"""
 def get_channel_annotations(df:pd.DataFrame) -> list:
     df_mouse_probes = df[['MID', 'probe', 'day']]
     annotation_files = []
