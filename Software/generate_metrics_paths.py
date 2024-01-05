@@ -71,7 +71,7 @@ def generate_templeton_metric_path_days(mouse_id: str, base_path: str, record_no
     return metrics_path_days
 
 # gets the path for the metrics csv
-def generate_metrics_path_days_codeocean(base_path: pathlib.Path, mouse_id: str):
+def generate_metrics_path_days_codeocean(base_path: pathlib.Path, mouse_id: str) -> dict[int, str]:
     sessions_mouse = []
     for session in npc_lims.get_session_info():
         if session.is_ephys and session.subject == mouse_id:
@@ -86,6 +86,7 @@ def generate_metrics_path_days_codeocean(base_path: pathlib.Path, mouse_id: str)
         session = pair[1]
         day = pair[0]
         metrics_files = list(base_path.glob(f'{session}/*/*/*/metrics.csv'))
+        metrics_files = [str(metric_file) for metric_file in metrics_files]
         metrics_path_days[day] = metrics_files
  
     return metrics_path_days
