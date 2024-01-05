@@ -1,14 +1,11 @@
-# generates a csv with the paths for the metrics file
+# generates a dictionary with the paths for the metrics file
 
 import pandas as pd
 import argparse
 import os
-import pickle
 import pathlib
 import glob
 from typing import Union
-import pydbhub.dbhub as dbhub
-import npc_session
 import npc_lims
 
 
