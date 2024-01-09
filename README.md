@@ -72,7 +72,7 @@ The app may take several mintues to load, and once it has loaded, the following 
     `/allen/programs/mindscope/workgroups/np-behavior/tissuecyte/mouseID/Probe_<probe_day>_annotations_mouseID_warped.csv`
 
 ### Reassignment App
-This app allows for probes to be reassigned to other probes along with deleting stray annotations. Run the command `python probe_reassignment.py -- mouseID <mouseID> --user <username> --password <password>` and then wait for some time before seeing a similar display as below. The app shows the probe trajectories in both a 2D and 3D view
+This app allows for probes to be reassigned to other probes along with deleting stray annotations. Run the command `python probe_reassignment.py -- mouseID <mouseID> --user <username> --password <password> --implant <implant>` and then wait for some time before seeing a similar display as below. The app shows the probe trajectories in both a 2D and 3D view
 
 ![image](https://github.com/arjunsridhar12345/Tissuecyte_Annotation/blob/main/images/reassignment_app_2.png)
 
@@ -96,6 +96,8 @@ After the reassignments have been done, open a command prompt terminal and ssh i
   
 ### Refinement App
 This app allows for the alignment of the 384 channels to the corresponding regions of interest. Run the command `python volume_alignment.py --mouseID <mouseID>`
+
+For dynamic routing experiments, run the command `python volume_alignment_corr.py --mouseID <mouseID>`
 
 The probe and the desired metric that will be displayed along with the unit density are shown in the drop downs. The unit density will always be the plot closest to the red probe track.
 
