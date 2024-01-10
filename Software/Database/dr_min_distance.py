@@ -27,7 +27,11 @@ def min_distance_to_ccf_point(group:np.array, point:list):
     
     return displacement, np.min(distance)
 
-def min_displacement_vector_table(df_insertion_channel_coords:np.array):
+def min_displacement_vector_table():
+    with open(pathlib.Path('//allen/programs/mindscope/workgroups/dynamicrouting/dynamic_gating_insertions/area_center_of_mass.json'), 'r') as f:
+        area_center_of_mass = json.load(f)
+
+    df_insertion_channel_coords = pd.read_sql_table('channel_ccf_coords', con=ENGINE.connect()).to_numpy()
     #print(df_insertion_channel_coords)
     dict_closest_point_insertion = {'session': [], 'MID': [], 'Day': [], 'Probe': [], 'Implant': [], 'Hole': [], 'Rig': []}
     directions = ['AP', 'DV', 'ML']
@@ -56,7 +60,12 @@ def min_displacement_vector_table(df_insertion_channel_coords:np.array):
     df_min_distance_insertion = pd.DataFrame(dict_closest_point_insertion)
     df_min_distance_insertion.to_sql('vector_to_region_com', con=ENGINE, schema=None, if_exists='replace')
 
-def min_distance_table(df_insertion_channel_coords:np.ndarray):
+def min_distance_table():
+    with open(pathlib.Path('//allen/programs/mindscope/workgroups/dynamicrouting/dynamic_gating_insertions/area_center_of_mass.json'), 'r') as f:
+        area_center_of_mass = json.load(f)
+
+    df_insertion_channel_coords = pd.read_sql_table('channel_ccf_coords', con=ENGINE.connect()).to_numpy()
+
     dict_min_distance_insertion = {'session': [], 'MID': [], 'Day': [], 'Probe': [], 'Implant': [], 'Hole': [], 'Rig': []}
 
     for area in area_center_of_mass:
@@ -103,6 +112,6 @@ if __name__ == '__main__':
 
     df_insertion_channel_coords = pd.read_sql_table('channel_ccf_coords', con=ENGINE.connect()).to_numpy()
     #min_distance_table(df_insertion_channel_coords)
-    min_displacement_vector_table(df_insertion_channel_coords)
+    min_displacement_vector_table()
     #df_min_displacement = pd.read_sql_table('closest_point_by_insertion', con=ENGINE.connect(), schema=None)
     #check_min_displacement_table(df_min_displacement)

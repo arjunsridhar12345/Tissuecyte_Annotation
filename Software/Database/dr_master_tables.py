@@ -10,7 +10,7 @@ import pandas as pd
 import logging
 import pickle
 import SimpleITK as sitk
-from clean_region import assign_label
+from Software.Database.clean_region import assign_label
 
 with open(pathlib.Path(r"\\allen\programs\mindscope\workgroups\np-behavior\tissuecyte\field_reference\acrnm_map.pkl"), 'rb') as f:
     ACRONYM_MAP = pickle.load(f)

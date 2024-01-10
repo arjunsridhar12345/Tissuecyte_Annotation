@@ -5,6 +5,8 @@ from tkinter import ANCHOR, N
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+from Database import dr_min_distance, dr_master_tables, dr_insertion_hit_rate
+import clean_structure_acronym
 import argparse
 import pathlib
 import os
@@ -658,9 +660,13 @@ class VolumeAlignment(QWidget):
         self.saveCCFButton = QPushButton('Save channel alignments')
         self.saveCCFButton.setFocusPolicy(QtCore.Qt.NoFocus)
         self.saveCCFButton.clicked.connect(self.saveCCFChannels)
+        self.updateDBButton = QPushButton('Update Probe Targeting Database')
+        self.updateDBButton.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.updateDBButton.clicked.connect(self.updateProbeTargetDatabase)
 
         self.anchorRefineLayout = QVBoxLayout()
         self.anchorRefineLayout.addWidget(self.saveCCFButton)
+        self.anchorRefineLayout.addWidget(self.updateDBButton)
         """
         self.anchorRefineLayout.addWidget(self.warpAnchorButton)
         self.anchorRefineLayout.addWidget(self.warpButton)
@@ -707,6 +713,13 @@ class VolumeAlignment(QWidget):
         clip_8 = (clip * 255. / (val[1] - val[0])).astype('uint8')
 
         return clip_8
+
+    def updateProbeTargetDatabase(self) -> None:
+        dr_master_tables.create_insertion_channel_table()
+        dr_min_distance.min_distance_table()
+        dr_min_distance.min_displacement_vector_table()
+        dr_insertion_hit_rate.insertion_hit_rate_table()
+        clean_structure_acronym.clean_channel_annotations(self.mouseID)
 
     def redSliderMoved(self):
         if not self.isRedChecked:

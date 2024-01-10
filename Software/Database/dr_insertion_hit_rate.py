@@ -64,7 +64,12 @@ def count_channels_in_region(group, region):
         
      return 0
 
-def insertion_hit_rate_table(df_insertion_channel_coords:pd.DataFrame):
+def insertion_hit_rate_table():
+    with open(pathlib.Path('//allen/programs/mindscope/workgroups/dynamicrouting/dynamic_gating_insertions/area_center_of_mass.json'), 'r') as f:
+        area_center_of_mass = json.load(f)
+
+    df_insertion_channel_coords = pd.read_sql_table('channel_ccf_coords', con=ENGINE.connect())
+    
     dict_insertion_hit_rate: dict = {'session': [], 'MID': [], 'Day': [], 'Probe': [], 'Implant': [], 'Hole': [], 'Rig': []}
 
     for area in area_center_of_mass:
@@ -107,6 +112,6 @@ if __name__ == '__main__':
         area_center_of_mass = json.load(f)
 
     df_insertion_channel_coords = pd.read_sql_table('channel_ccf_coords', con=ENGINE.connect())
-    insertion_hit_rate_table(df_insertion_channel_coords)
+    insertion_hit_rate_table()
     #df_insertion_hit_rate = pd.read_sql_table('hit_rate_by_insertion', con=ENGINE.connect(), schema=None)
     #check_insertion_table(df_insertion_hit_rate)
