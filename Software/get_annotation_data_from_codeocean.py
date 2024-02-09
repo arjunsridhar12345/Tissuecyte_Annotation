@@ -97,12 +97,12 @@ def get_capsule_results(capsule_id: str, session: npc_session.SessionRecord) -> 
         session_result_item = tuple(
             item
             for item in result_items["items"]
-            if re.match(  # TODO add folder
+            if re.match(  
                 f"ecephys_{session.subject}_{session.date}_{npc_session.PARSE_TIME}",
                 item["name"],
             )
         )
-        
+
         if session_result_item:
             computation_id = computation['id']
             break
