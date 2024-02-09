@@ -6,6 +6,7 @@ import warnings
 import argparse
 from get_correlation_plot import get_correlation_data
 from typing import Union
+import re
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--mouseID', help='Mouse ID of session')
@@ -81,17 +82,31 @@ def get_capsule_results(capsule_id: str, session: npc_session.SessionRecord) -> 
     
     capusle_computations = npc_lims.get_codeocean_client().get_capsule_computations(capsule_id)
     capusle_computations.raise_for_status()
-    while True:
-        capsule_runs = capusle_computations.json()
-        states = [run["state"] for run in capsule_runs]
+    capusle_computations = capusle_computations.json()
 
-        if all(state == "completed" for state in states):
+    for computation in capusle_computations:
+        if not computation["has_results"] and computation["state"] != "completed":
+            continue
+
+        response_result_items = npc_lims.get_codeocean_client().get_list_result_items(
+            computation["id"]
+        )
+        response_result_items.raise_for_status()
+        result_items = response_result_items.json()
+
+        session_result_item = tuple(
+            item
+            for item in result_items["items"]
+            if re.match(  # TODO add folder
+                f"ecephys_{session.subject}_{session.date}_{npc_session.PARSE_TIME}",
+                item["name"],
+            )
+        )
+        
+        if session_result_item:
+            computation_id = computation['id']
             break
 
-        capusle_computations = npc_lims.get_codeocean_client().get_capsule_computations(capsule_id)
-        capusle_computations.raise_for_status()
-    
-    computation_id = capusle_computations.json()[0]['id']
     result_items = npc_lims.get_codeocean_client().get_list_result_items(computation_id).json()['items']
     download_metrics_spike_data(result_items, computation_id, session.id)
 

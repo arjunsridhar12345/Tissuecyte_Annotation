@@ -143,5 +143,5 @@ def get_correlation_data(mouse_id:str):
 if __name__ == '__main__':
     args = parser.parse_args()
     #mouse = args.mouseID
-    mouse = '662892'
+    mouse = '686740'
     get_correlation_data(mouse)
