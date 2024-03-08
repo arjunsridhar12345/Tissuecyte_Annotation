@@ -425,6 +425,7 @@ class VolumeAlignment(QWidget):
         #self.metrics = pd.read_csv(pathlib.Path('//allen/programs/mindscope/workgroups/dynamicrouting/PilotEphys/Task 2 pilot/2022-08-15_11-22-28_626791/Record Node 108/experiment1/recording1/continuous/Neuropix-PXI-102.{}-AP/metrics_test.csv'.format(self.probe)))
         
         self.basePath = pathlib.Path('//allen/programs/mindscope/workgroups/np-exp')
+        self.codeOceanPath = pathlib.Path('//allen/programs/mindscope/workgroups/np-behavior/tissuecyte/plots')
         self.templeBasePath = pathlib.Path('//allen/programs/mindscope/workgroups/templeton/TTOC/pilot recordings')
         self.noRecord = False
 
@@ -432,7 +433,7 @@ class VolumeAlignment(QWidget):
             if not dr:
                 self.waveMetricsPath = generate_metrics_path_ephys(self.basePath, self.mouseID)
             else:
-                self.waveMetricsPath = generate_metrics_path_days_codeocean(self.basePath, self.mouseID)
+                self.waveMetricsPath = generate_metrics_path_days_codeocean(self.codeOceanPath, self.mouseID)
 
             #self.days = sorted(list(self.waveMetricsPath.keys()))
             self.waveform_metrics = pd.read_csv(os.path.join(self.basePath, '1178173272_608671_20220518/1178173272_608671_20220518_probeB_sorted/continuous/Neuropix-PXI-100.0', 

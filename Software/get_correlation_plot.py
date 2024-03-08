@@ -14,6 +14,8 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--mouseID', help='Mouse ID of session')
 
+BASE_PATH = pathlib.Path('//allen/programs/mindscope/workgroups/np-behavior/tissuecyte/plots')
+
 # class for qc on kilosort output
 class qcChecker():
     def __init__(self, kilo_sort_path:pathlib.Path, mouse_id:str, probe:str, scale:int=384, channel_max:int=3840):
@@ -121,8 +123,8 @@ class qcChecker():
         with open(pathlib.Path(path, '{}_corr.pickle'.format(self.probe)), 'wb') as f:
             pickle.dump(data_img, f)
 
-def get_correlation_data(mouse_id:str):
-    metrics_paths = generate_metrics_path_days_codeocean(pathlib.Path('//allen/programs/mindscope/workgroups/np-exp'), mouse_id)
+def get_correlation_data(mouse_id:str, is_codeocean:bool=False):
+    metrics_paths = generate_metrics_path_days_codeocean(BASE_PATH, mouse_id)
     probe_letters = ['A', 'B', 'C', 'D', 'E', 'F']
 
     for day in metrics_paths:

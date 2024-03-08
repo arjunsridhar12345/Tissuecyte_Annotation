@@ -75,7 +75,7 @@ def generate_metrics_path_days_codeocean(base_path: pathlib.Path, mouse_id: str)
     >>> metrics_paths[1][0]
     '//allen/programs/mindscope/workgroups/np-exp/681532_2023-10-16_0/probeA/continuous/Neuropix-PXI-100.0/metrics.csv'
     """
-    sessions_mouse = []
+    sessions_mouse: list[npc_lims.SessionInfo] = []
     for session in npc_lims.get_session_info():
         if session.is_ephys and session.subject == mouse_id:
             sessions_mouse.append(session)
