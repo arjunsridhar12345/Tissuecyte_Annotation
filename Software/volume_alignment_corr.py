@@ -171,16 +171,16 @@ class PlotDisplayItem():
     
     # Updates the metrics with the given path to the metrics csv
     # path: string, the path to the csv
-    def updateMetrics(self, path, templeton=False):
+    def updateMetrics(self, path, templeton=False, dr=False):
         self.waveform_metrics = pd.read_csv(path)
         print('Metrics Path', path)
-        self.generateMetrics(self.measurement, templeton=templeton)
+        self.generateMetrics(self.measurement, templeton=templeton, dr=dr)
 
     # generates the metrics based on the measurement passed in
     # measurement: string, the metric
-    def generateMetrics(self, measurement, templeton=False, channels=None):
+    def generateMetrics(self, measurement, templeton=False, dr=False, channels=None):
         if self.measurement == 'unit_density':
-            self.processMetrics(templeton=templeton)
+            self.processMetrics(templeton=templeton, dr=dr)
             self.frequencyCounts = self.waveform_metrics['peak_channel'].value_counts().sort_index().reset_index().to_numpy()
             #x = np.linspace(-10, 100, num=384)
             self.channelsRecorded = self.frequencyCounts[:, 0].tolist()
@@ -213,8 +213,8 @@ class PlotDisplayItem():
             self.adj = [[i, i + 1] for i in range(len(self.channelsOriginal) - 1)]
             self.ogChannelsPlot.setData(pos=np.array(self.ogChannelsShift, dtype=float), adj=np.array(self.adj, dtype=int))
         else:
-            self.processMetrics(templeton=templeton)
-            self.generateMetricChannels(measurement, scale_value=1/100, shift_value=250)
+            self.processMetrics(templeton=templeton, dr=dr)
+            self.generateMetricChannels(measurement, scale_value=1/5, shift_value=170)
 
     def updatePlotChannelPositions(self, channel_positions:list):
         self.ogChannelsShift = [[p[0] - 200, p[1]] for p in channel_positions]
@@ -231,13 +231,13 @@ class PlotDisplayItem():
         #print('Metric', metric)
         peak_values = self.averageMetricsChannels['peak_channel'].values.tolist()
         values = self.averageMetricsChannels[metric]
-
+ 
         if 'velocity' in metric:
             values = (2 * (values - values.min()) / (values.max() - values.min())) - 1
         else:
             values = (values - values.min()) / (values.max() - values.min())
 
-        conv = np.ones(10)
+        conv = np.ones(3)
         self.channelsOriginal = []
         if max(peak_values) > 384:
             self.max_range = 768
@@ -266,16 +266,19 @@ class PlotDisplayItem():
         #print(smoothed.shape)
         for i in range(self.max_range):
             if scale_value != 0:
-                self.channelsOriginal[i] = [(smoothed[i] / scale_value) - shift_value, self.channelsOriginal[i][1]]
+                self.channelsOriginal[i] = [(smoothed[i] * 50) - shift_value, self.channelsOriginal[i][1]]
             else:
-                self.channelsOriginal[i] = [(smoothed[i]) - shift_value, self.channelsOriginal[i][1]]
+                self.channelsOriginal[i] = [(self.channelsOriginal[i][0][i]) - shift_value, self.channelsOriginal[i][1]]
         
-    def processMetrics(self, templeton=False):
+    def processMetrics(self, templeton=False, dr=False):
         if not templeton:
-            if 'quality' in self.waveform_metrics.columns:
-                self.waveform_metrics = self.waveform_metrics.drop(columns=['epoch_name_quality_metrics', 'epoch_name_waveform_metrics', 'quality'])
-            elif 'epoch_name_quality_metrics' in self.waveform_metrics.columns:
-                self.waveform_metrics = self.waveform_metrics.drop(columns=['epoch_name_quality_metrics', 'epoch_name_waveform_metrics'])
+            if dr:
+                self.waveform_metrics = self.waveform_metrics.drop(columns=['unit_id', 'session_id', 'experiment_day', 'project', 'probe'])
+            else:
+                if 'quality' in self.waveform_metrics.columns:
+                    self.waveform_metrics = self.waveform_metrics.drop(columns=['epoch_name_quality_metrics', 'epoch_name_waveform_metrics', 'quality'])
+                elif 'epoch_name_quality_metrics' in self.waveform_metrics.columns:
+                    self.waveform_metrics = self.waveform_metrics.drop(columns=['epoch_name_quality_metrics', 'epoch_name_waveform_metrics'])
         #self.wnorm = (2 * (self.waveform_metrics - self.waveform_metrics.min()) / (self.waveform_metrics.max() - self.waveform_metrics.min())) - 1
 
         #self.wnorm['peak_channel'] = self.waveform_metrics['peak_channel']
@@ -428,6 +431,7 @@ class VolumeAlignment(QWidget):
         self.codeOceanPath = pathlib.Path('//allen/programs/mindscope/workgroups/np-behavior/tissuecyte/plots')
         self.templeBasePath = pathlib.Path('//allen/programs/mindscope/workgroups/templeton/TTOC/pilot recordings')
         self.noRecord = False
+        self.dr = dr
 
         if not templeton:
             if not dr:
@@ -436,7 +440,10 @@ class VolumeAlignment(QWidget):
                 self.waveMetricsPath = generate_metrics_path_days_codeocean(self.codeOceanPath, self.mouseID)
 
             #self.days = sorted(list(self.waveMetricsPath.keys()))
-            self.waveform_metrics = pd.read_csv(os.path.join(self.basePath, '1178173272_608671_20220518/1178173272_608671_20220518_probeB_sorted/continuous/Neuropix-PXI-100.0', 
+            if dr:
+                self.waveform_metrics = pd.read_csv(pathlib.Path(r"\\allen\programs\mindscope\workgroups\dynamicrouting\Ethan\metrics for alignment\stimulus responsiveness\674562_2023-10-05_0_day_4_probeB_stim_modulation.csv"))
+            else:
+                self.waveform_metrics = pd.read_csv(os.path.join(self.basePath, '1178173272_608671_20220518/1178173272_608671_20220518_probeB_sorted/continuous/Neuropix-PXI-100.0', 
                                                              'metrics.csv'))
         else:
             if record_node is None:
@@ -544,8 +551,10 @@ class VolumeAlignment(QWidget):
             print(self.waveform_metrics.columns)
             self.waveform_metrics.drop(columns=(['Unnamed: 0', 'cluster_id', 'epoch_name']), inplace=True)
         else:
-            self.waveform_metrics.drop(columns=['Unnamed: 0', 'cluster_id', 'epoch_name_quality_metrics', 'epoch_name_waveform_metrics', 'quality'], inplace=True)
-
+            if not self.dr:
+                self.waveform_metrics.drop(columns=['Unnamed: 0', 'cluster_id', 'epoch_name_quality_metrics', 'epoch_name_waveform_metrics', 'quality'], inplace=True)
+            else:
+                self.waveform_metrics.drop(columns=['unit_id', 'session_id', 'experiment_day', 'project', 'probe'], inplace=True)
         for column in self.waveform_metrics.columns:
             if column == 'peak_channel':
                 self.plots['unit_density'] = PlotDisplayItem('unit_density', self.waveform_metrics, self.probeAnnotations, self.mouseID, self.metricsList, label=self.label)
@@ -613,14 +622,14 @@ class VolumeAlignment(QWidget):
         self.sliderLayout.addRow('Red Slider', self.redSlider)
         self.sliderLayout.addRow('Green Slider', self.greenSlider)
 
-        """
+        
         self.metrics = QComboBox()
         self.metrics.setFocusPolicy(QtCore.Qt.NoFocus)
         self.metrics.currentTextChanged.connect(self.metricChanged)
         for metric in self.waveform_metrics.columns:
             if metric != 'peak_channel':
                 self.metrics.addItem(metric)
-        """
+        
 
         self.toggleProbeButton = QPushButton('Toggle Probe')
         self.toggleProbeButton.clicked.connect(self.toggleProbe)
@@ -677,7 +686,7 @@ class VolumeAlignment(QWidget):
 
         self.probeViewLayout = QHBoxLayout()
         self.probeViewLayout.addWidget(self.probeDropDown)
-        #self.probeViewLayout.addWidget(self.metrics)
+        self.probeViewLayout.addWidget(self.metrics)
         #self.probeViewLayout.addWidget(self.toggleProbeButton)
         self.probeViewLayout.addWidget(self.viewButton)
         self.probeViewLayout.addWidget(self.resetPlotButton)
@@ -821,7 +830,7 @@ class VolumeAlignment(QWidget):
 
     def resetPlotImage(self):
         self.resetPlot()
-        anchor = [self.plots['unit_density'].channels, None, self.anchorPts.copy(), 
+        anchor = [self.plots['unit_density'].channels, self.plots[self.metrics.currentText().lower()].channels, self.anchorPts.copy(), 
                                                   self.pointsAdded.copy()] 
 
         self.alignments[self.probeDropDown.currentText()] = anchor 
@@ -832,7 +841,9 @@ class VolumeAlignment(QWidget):
         if hasattr(self.plots['unit_density'], 'channelsOriginal'):
             self.plots['unit_density'].resetPlot()
         
-        #self.plots[self.metrics.currentText().lower()].resetPlot()
+        if hasattr(self.plots[self.metrics.currentText()], 'channelsOriginal'):
+            self.plots[self.metrics.currentText().lower()].resetPlot()
+
         self.showProbe = True
         view = self.image.getView()
 
@@ -1250,19 +1261,27 @@ class VolumeAlignment(QWidget):
         probe_let_num = probe[probe.index(' ')+1:]
 
         #key = self.days[int(probe_let_num[1])]
-        paths = self.waveMetricsPath[int(probe_let_num[1])]
+        if self.dr:
+            path = tuple(pathlib.Path(self.workingDirectory, 'metrics for alignment', 
+                                     'stimulus responsiveness').glob(f'{self.mouseID}*_day_{probe_let_num[1]}_probe{probe_let_num[0]}*.csv'))
+            if path:
+                self.path = path[0]
+            else:
+                self.path = ''
+        else:
+            paths = self.waveMetricsPath[int(probe_let_num[1])]
 
-        self.path = ''
-        for p in paths:
-            if 'probe' + probe_let_num[0] in p:
-                self.path = p
-                break
-            elif self.templeton and 'Probe' + probe_let_num[0] in p:
-                self.path = p
-                break
+            self.path = ''
+            for p in paths:
+                if 'probe' + probe_let_num[0] in p:
+                    self.path = p
+                    break
+                elif self.templeton and 'Probe' + probe_let_num[0] in p:
+                    self.path = p
+                    break
 
         if self.path != '':
-            self.plots[metric].updateMetrics(self.path, self.templeton)
+            self.plots[metric].updateMetrics(self.path, self.templeton, self.dr)
         #self.plots[metric].generateMetrics(metric.lower())
 
         if hasattr(self, 'linepts'):
@@ -1287,7 +1306,7 @@ class VolumeAlignment(QWidget):
         probe = self.probeDropDown.currentText()
         #self.qc_plot = qcChecker(self.mouseID, probe[probe.index(' ') + 1:])
 
-        #metric = self.metrics.currentText()
+        metric = self.metrics.currentText()
         self.path = ''
         view = self.image.getView()
 
@@ -1308,19 +1327,28 @@ class VolumeAlignment(QWidget):
                 if self.templeton:
                     paths = self.waveMetricsPath[key]
                 else:
-                    paths = self.waveMetricsPath[int(probe_let_num[1])]
+                    if self.dr:
+                        path = tuple(pathlib.Path(self.workingDirectory, 'metrics for alignment', 
+                                     'stimulus responsiveness').glob(f'{self.mouseID}*_day_{probe_let_num[1]}_probe{probe_let_num[0]}*.csv'))
+                        if path:
+                            self.path = path[0]
+                        else:
+                            self.path = ''
+                    else:
+                        paths = self.waveMetricsPath[int(probe_let_num[1])]
 
-                for p in paths:
-                    if 'probe' + probe_let_num[0] in p:
-                        self.path = p
-                        break
-                    elif self.templeton and 'Probe' + probe_let_num[0] in p:
-                        self.path = p
-                        break
+                if not self.dr:
+                    for p in paths:
+                        if 'probe' + probe_let_num[0] in p:
+                            self.path = p
+                            break
+                        elif self.templeton and 'Probe' + probe_let_num[0] in p:
+                            self.path = p
+                            break
 
-                self.plots['unit_density'].updateMetrics(self.path, self.templeton)
+                self.plots['unit_density'].updateMetrics(self.path, self.templeton, self.dr)
                 #self.plots['unit_density'].updateDisplay(probe, self.linepts, self.intensityValues) # update display since no existing alignment has been done so far
-                #self.plots[metric].updateMetrics(self.path, self.templeton)
+                self.plots[metric].updateMetrics(self.path, self.templeton, self.dr)
                 self.resetPlot()
                 self.updateDisplay(probe, restore=True)
                 #self.plots[metric].updateDisplay(probe, self.linepts, self.intensityValues, keep_y=True, old_y=self.alignments[probe][1], points_added=self.alignments[probe][-1])
@@ -1347,34 +1375,43 @@ class VolumeAlignment(QWidget):
                 if self.templeton:
                     paths = self.waveMetricsPath[key]
                 else:
-                    paths = self.waveMetricsPath[int(probe_let_num[1])]
+                    if self.dr:
+                        path = tuple(pathlib.Path(self.workingDirectory, 'metrics for alignment', 
+                                     'stimulus responsiveness').glob(f'{self.mouseID}*_day_{probe_let_num[1]}_probe{probe_let_num[0]}*.csv'))
+                        if path:
+                            self.path = path[0]
+                        else:
+                            self.path = ''
+                    else:
+                        paths = self.waveMetricsPath[int(probe_let_num[1])]
 
-                for p in paths:
-                    if 'probe' + probe_let_num[0] in p:
-                        self.path = p
-                        break
-                    elif self.templeton and 'Probe' + probe_let_num[0] in p:
-                        self.path = p
-                        break
+                if not self.dr:
+                    for p in paths:
+                        if 'probe' + probe_let_num[0] in p:
+                            self.path = p
+                            break
+                        elif self.templeton and 'Probe' + probe_let_num[0] in p:
+                            self.path = p
+                            break
 
                 if self.prevProbe == '' or self.prevProbe != probe: # new alignment
                     if self.prevProbe != '' and self.prevProbe != probe:
                         if self.path == '':
                             view.removeItem(self.plots['unit_density'].channelsPlot)
-                            #view.removeItem(self.plots[metric].channelsPlot)
+                            view.removeItem(self.plots[metric].channelsPlot)
 
                         self.resetPlot()
                         self.updateDisplay(probe)
                     else: # initial display when nothing has been done
-                        self.plots['unit_density'].updateMetrics(self.path, self.templeton)
+                        self.plots['unit_density'].updateMetrics(self.path, self.templeton, self.dr)
                         self.updateDisplay(probe)
 
                     if self.path != '':
-                        self.plots['unit_density'].updateMetrics(self.path, self.templeton)
+                        self.plots['unit_density'].updateMetrics(self.path, self.templeton, self.dr)
                         self.plots['unit_density'].updateDisplay(probe, self.linepts, self.intensityValues) # update display since no existing alignment has been done so far
 
-                        #self.plots[metric].updateMetrics(self.path, self.templeton)
-                        #self.plots[metric].updateDisplay(probe, self.linepts, self.intensityValues)
+                        self.plots[metric].updateMetrics(self.path, self.templeton, self.dr)
+                        self.plots[metric].updateDisplay(probe, self.linepts, self.intensityValues)
 
                         self.prevProbe = probe
                         #self.oldMetric = metric
@@ -1384,7 +1421,7 @@ class VolumeAlignment(QWidget):
                         popup.exec_()
             except (FileNotFoundError, IndexError, KeyError): # metrics file not found
                 view.removeItem(self.plots['unit_density'].channelsPlot)
-                #view.removeItem(self.plots[metric].channelsPlot)
+                view.removeItem(self.plots[metric].channelsPlot)
                 self.resetPlot()
                 self.updateDisplay(probe)
                 popup = QMessageBox()
@@ -1573,12 +1610,12 @@ class VolumeAlignment(QWidget):
             self.textItems.append(text)
 
         # update other plots to match alignment of unit density
-        """
+        
         if is_unit:
             self.updateAfterClick(self.plots[self.metrics.currentText().lower()], line_point, channel, self.pointsAdded)
         else:
             self.updateAfterClick(self.plots['unit_density'], line_point, channel, self.pointsAdded)
-        """
+        
         self.pointsAdded.append(line_point[1])
         click_plot.linearSpacePoints(self.pointsAdded)
         view = self.image.getView()
@@ -1594,18 +1631,18 @@ class VolumeAlignment(QWidget):
             y = [point[1] for point in self.plots['unit_density'].channels]
             self.removeImagePlotCCFAreas()
             self.displayImageCCFAreas(y)
-        """
+        
         if is_unit:
             self.plots[self.metrics.currentText().lower()].linearSpacePoints(self.pointsAdded)
         else:
             self.plots['unit_density'].linearSpacePoints(self.pointsAdded)
-        """
+        
         view.addItem(h_line)
         view.addItem(text)
         #h_line.setClickable(True)
         h_line.sigClicked.connect(self.clickLine)
 
-        anchor = [self.plots['unit_density'].channels, None, self.anchorPts.copy(), 
+        anchor = [self.plots['unit_density'].channels, self.plots[self.metrics.currentText().lower()].channels, self.anchorPts.copy(), 
                                               self.pointsAdded.copy()] 
 
         self.alignments[self.probeDropDown.currentText()] = anchor
@@ -1627,7 +1664,7 @@ class VolumeAlignment(QWidget):
             self.onClickProbeHelper(self.plots[self.metrics.currentText().lower()], line_point, is_unit=False)
 
         self.plots['unit_density'].channelsPlot.clicked = False
-        #self.plots[self.metrics.currentText().lower()].channelsPlot.clicked = False
+        self.plots[self.metrics.currentText().lower()].channelsPlot.clicked = False
     
     def refineSpline(self, new_y, dist):
         y = [p[1] for p in self.channels]
@@ -1745,9 +1782,9 @@ class VolumeAlignment(QWidget):
             self.anchorPts.pop(-1)
             self.pointsAdded.pop(-1)
             self.plots['unit_density'].linearSpacePoints(self.pointsAdded)
-            #self.plots[self.metrics.currentText().lower()].linearSpacePoints(self.pointsAdded)
+            self.plots[self.metrics.currentText().lower()].linearSpacePoints(self.pointsAdded)
 
-            anchor = [self.plots['unit_density'].channels, None, self.anchorPts.copy(), 
+            anchor = [self.plots['unit_density'].channels, self.plots[self.metrics.currentText().lower()].channels, self.anchorPts.copy(), 
                                               self.pointsAdded.copy()] 
             self.alignments[self.probeDropDown.currentText()] = anchor
             self.saveAnchor(anchor)
@@ -1770,9 +1807,9 @@ class VolumeAlignment(QWidget):
                 self.anchorPts.pop(ind)
                 self.pointsAdded.pop(ind)
                 self.plots['unit_density'].linearSpacePoints(self.pointsAdded)
-                #self.plots[self.metrics.currentText().lower()].linearSpacePoints(self.pointsAdded)
+                self.plots[self.metrics.currentText().lower()].linearSpacePoints(self.pointsAdded)
 
-                anchor = [self.plots['unit_density'].channels, None, self.anchorPts.copy(), 
+                anchor = [self.plots['unit_density'].channels, self.plots[self.metrics.currentText().lower()].channels, self.anchorPts.copy(), 
                                                   self.pointsAdded.copy()] 
                 self.alignments[self.probeDropDown.currentText()] = anchor
                 self.saveAnchor(anchor)
@@ -2047,7 +2084,7 @@ class VolumeAlignment(QWidget):
                 view.addItem(self.plots['unit_density'].channelsPlot)
                 view.addItem(self.plots['unit_density'].ogChannelsPlot)
                 self.displayPlotImage()
-                #view.addItem(self.plots[self.metrics.currentText().lower()].channelsPlot)
+                view.addItem(self.plots[self.metrics.currentText().lower()].channelsPlot)
 
                 #view.addItem(self.plItem)
         else: # read from dictionary storing saved plots for the probe
@@ -2056,14 +2093,14 @@ class VolumeAlignment(QWidget):
            
             self.plots['unit_density'].channels = plot_items[0].copy()
             self.plots['unit_density'].channelsPlot.setData(pos=np.array(plot_items[0], dtype=float), adj=np.array(self.plots['unit_density'].adj, dtype=int))
-            #self.plots[self.metrics.currentText().lower()].channelsPlot.setData(pos=np.array(plot_items[1], dtype=float), adj=np.array(self.plots['unit_density'].adj, dtype=int))
-            #self.plots[self.metrics.currentText().lower()].channels = plot_items[1].copy()
+            self.plots[self.metrics.currentText().lower()].channelsPlot.setData(pos=np.array(plot_items[1], dtype=float), adj=np.array(self.plots['unit_density'].adj, dtype=int))
+            self.plots[self.metrics.currentText().lower()].channels = plot_items[1].copy()
 
 
             view.addItem(self.plots['unit_density'].channelsPlot) # add unit plot
             self.plots['unit_density'].updatePlotChannelPositions(self.plots['unit_density'].channels)
             view.addItem(self.plots['unit_density'].ogChannelsPlot)
-            #view.addItem(self.plots[self.metrics.currentText().lower()].channelsPlot) # add metric plot
+            view.addItem(self.plots[self.metrics.currentText().lower()].channelsPlot) # add metric plot
             self.displayPlotImage()
             y = [t[1] for t in self.plots['unit_density'].channels]
             self.anchorPts = plot_items[2].copy() # add line pts

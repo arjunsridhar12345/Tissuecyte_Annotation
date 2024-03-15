@@ -194,23 +194,17 @@ def save_refinement_metrics(session: npc_session.SessionRecord, session_surface:
         spike_depths = clusters_depths[spike_clusters]
 
         save_for_annotation(session, spike_times, spike_depths, peak_channels, probe)
-    print()
 
 def get_annotation_data_for_mouse(mouse_id:str) -> None:
     
     sessions = npc_lims.get_sessions_with_data_assets(mouse_id)
     for session in sessions:
-        session_info = npc_lims.get_session_info(session)
-        if session_info.is_surface_channels:
-            session_surface = npc_session.SessionRecord(session).with_idx(1)
-            save_refinement_metrics(session, session_surface=session_surface)
-        else:
-            save_refinement_metrics(npc_session.SessionRecord('674562_2023-10-03'))
+        save_refinement_metrics(session)
     
     get_correlation_data(mouse_id)
     
 if __name__ == '__main__':
     #args = parser.parse_args()
     #mouse_id = args.mouseID
-    mouse_id = '674562'
+    mouse_id = '667252'
     get_annotation_data_for_mouse(mouse_id)
