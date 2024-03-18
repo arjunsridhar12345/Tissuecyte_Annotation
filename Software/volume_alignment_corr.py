@@ -202,10 +202,10 @@ class PlotDisplayItem():
             self.channelsOriginal = [[self.channelsOriginal[i][1], self.max_range - i - 1 + 256] for i in range(len(self.channelsOriginal))]
             
             x_val = [p[0] * 10 for p in self.channelsOriginal]
-            conv = np.ones(10)
+            kernel_size = 10
+            conv = np.ones(kernel_size) / kernel_size
 
             smoothed = np.convolve(x_val, conv, mode='same')
-            smoothed = smoothed / np.sum(conv)
             self.channelsOriginal = [[smoothed[i] - 100, self.channelsOriginal[i][1]] for i in range(len(self.channelsOriginal))]
 
             self.ogChannelsShift = [[p[0] - 200, p[1]] for p in self.channelsOriginal]
@@ -237,7 +237,8 @@ class PlotDisplayItem():
         else:
             values = (values - values.min()) / (values.max() - values.min())
 
-        conv = np.ones(3)
+        kernel_size = 10
+        conv = np.ones(kernel_size) / kernel_size 
         self.channelsOriginal = []
         if max(peak_values) > 384:
             self.max_range = 768
@@ -262,7 +263,7 @@ class PlotDisplayItem():
         x_val = [p[0] for p in self.channelsOriginal]
         print('X_val', len(x_val))
         smoothed = np.convolve(x_val, conv, mode='same')
-        smoothed = smoothed / np.sum(conv)
+        #smoothed = smoothed / np.sum(conv)
         #print(smoothed.shape)
         for i in range(self.max_range):
             if scale_value != 0:
@@ -441,7 +442,7 @@ class VolumeAlignment(QWidget):
 
             #self.days = sorted(list(self.waveMetricsPath.keys()))
             if dr:
-                self.waveform_metrics = pd.read_csv(pathlib.Path(r"\\allen\programs\mindscope\workgroups\dynamicrouting\Ethan\metrics for alignment\stimulus responsiveness\674562_2023-10-05_0_day_4_probeB_stim_modulation.csv"))
+                self.waveform_metrics = pd.read_csv(pathlib.Path(r"\\allen\programs\mindscope\workgroups\np-behavior\tissuecyte\metrics for alignment\stimulus responsiveness\674562_2023-10-05_0_day_4_probeB_stim_modulation.csv"))
             else:
                 self.waveform_metrics = pd.read_csv(os.path.join(self.basePath, '1178173272_608671_20220518/1178173272_608671_20220518_probeB_sorted/continuous/Neuropix-PXI-100.0', 
                                                              'metrics.csv'))
@@ -497,6 +498,7 @@ class VolumeAlignment(QWidget):
         self.ccfTextItems = []
         self.ccfPlotItems = []
         self.probeItems = []
+        self.probeMaskItems = []
         self.anchorItems = []
         self.anchorPos = []
         self.plotImageItems = []
@@ -573,6 +575,7 @@ class VolumeAlignment(QWidget):
         self.imageLayout = QHBoxLayout()
 
         self.imageLayout.addWidget(self.image)
+        view = self.image.getView()
         self.imageLayout.addWidget(self.imageMask)
 
         # ui features: probe/metric drop downs, red/green toggle, toggle probe, toggle mask, warp to ccf
@@ -846,6 +849,7 @@ class VolumeAlignment(QWidget):
 
         self.showProbe = True
         view = self.image.getView()
+        view_mask = self.imageMask.getView()
 
         if hasattr(self, 'plotImage') and self.prevProbe != self.probeDropDown.currentText():
             view.removeItem(self.plotImage)
@@ -879,8 +883,12 @@ class VolumeAlignment(QWidget):
                 for item in self.probeItems:
                     view.removeItem(item)
 
+                for item in self.probeMaskItems:
+                    view_mask.removeItem(item)
+
             self.ccfAreaItems.clear()
             self.probeItems.clear()
+            self.probeMaskItems.clear()
         
         self.distPoints.clear()
         self.anchorPts.clear()
@@ -900,12 +908,17 @@ class VolumeAlignment(QWidget):
     def toggleProbe(self):
         print(self.showProbe)
         view = self.image.getView()
+        view_mask = self.imageMask.getView()
+
         if self.showProbe:
             for item in self.ccfAreaItems:
                 view.removeItem(item)
 
             for item in self.probeItems:
                 view.removeItem(item)
+
+            for item in self.probeMaskItems:
+                view_mask.removeItem(item)
 
             self.showProbe = False
         else:
@@ -914,6 +927,9 @@ class VolumeAlignment(QWidget):
 
             for item in self.probeItems:
                 view.addItem(item)
+
+            for item in self.probeMaskItems:
+                view_mask.addItem(item)
 
             self.showProbe = True
     
@@ -1907,6 +1923,8 @@ class VolumeAlignment(QWidget):
     def displayCCFAreas(self):
         color = 'cyan'
         view = self.image.getView()
+        view_mask = self.imageMask.getView()
+
         prev_area = ''
         self.allAreas = {}
 
@@ -1931,9 +1949,13 @@ class VolumeAlignment(QWidget):
                     prev_area = area
 
             item = pg.ScatterPlotItem(pos=[[80, i]], pen=QtGui.QPen(QColor(color)), brush=QtGui.QBrush(QColor(color)), size=5)
+            item_mask  = pg.ScatterPlotItem(pos=[[80, i]], pen=QtGui.QPen(QColor(color)), brush=QtGui.QBrush(QColor(color)), size=5)
             item.sigClicked.connect(self.onclickProbe)
             self.probeItems.append(item)
+            self.probeMaskItems.append(item_mask)
             view.addItem(item)
+            view_mask.addItem(item_mask)
+
 
     def removeImagePlotCCFAreas(self):
         view = self.image.getView()
@@ -1950,6 +1972,7 @@ class VolumeAlignment(QWidget):
     def displayImageCCFAreas(self, y: list):
         color = 'cyan'
         view = self.image.getView()
+        
         prev_area = ''
         initial_pos = self.plots['unit_density'].ogChannelsShift[0]
         for i in range(len(y)):
