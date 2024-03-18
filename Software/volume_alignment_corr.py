@@ -3,7 +3,6 @@
 #from this import d
 from tkinter import ANCHOR, N
 import pandas as pd
-import matplotlib.pyplot as plt
 import numpy as np
 from Database import dr_min_distance, dr_master_tables, dr_insertion_hit_rate
 import clean_structure_acronym
@@ -1079,13 +1078,14 @@ class VolumeAlignment(QWidget):
             ind = y.index(point)
             row = self.df_ccf.loc[self.df_ccf['channel'] == ind]
            
-            plt.scatter(row.ML, row.DV, s=15, c='orange')
+            #plt.scatter(row.ML, row.DV, s=15, c='orange')
 
         grouped = self.df_ccf.groupby('channel_areas').mean()
         
         for index, row in grouped.iterrows(): # plot areas
             if index != 'N/A':
-                plt.text(row.ML, row.DV, index, color='white')
+                pass
+                #plt.text(row.ML, row.DV, index, color='white')
 
         # plot color scheme of areas on image
         prev_area = ''
@@ -1135,8 +1135,8 @@ class VolumeAlignment(QWidget):
 
         view.removeItem(self.plItem)
         self.showProbe = False
-        plt.imshow(sitk.GetArrayFromImage(self.reference).T[int(grouped.AP.mean()), :, :])
-        plt.show()
+        #plt.imshow(sitk.GetArrayFromImage(self.reference).T[int(grouped.AP.mean()), :, :])
+        #plt.show()
 
     # closest value helper
     def closestValue(self, input_list, input_value):

@@ -18,6 +18,7 @@ Software/get_correlation_plot.py
 Software/get_spike_depths.py
 Software/get_tissuecyte_info.py
 Software/get_volume_slice.py
+Software/implant_coordinates.py
 Software/metrics_analysis.py
 Software/pathlib_example.py
 Software/preprocess_generation.py
@@ -28,6 +29,16 @@ Software/temp.py
 Software/volume_alignment.py
 Software/volume_alignment_corr.py
 Software/warp_image.py
+Software/Database/__init__.py
+Software/Database/clean_region.py
+Software/Database/dr_insertion_hit_rate.py
+Software/Database/dr_master_tables.py
+Software/Database/dr_min_distance.py
+Software/Database/get_area_info.py
+Software/Database/read_database.py
+Software/Database/update_calculations_tables.py
+Software/Database/update_ccf_calculations_table.py
+Software/Database/update_targeting_database.py
 tissuecyte_annotation.egg-info/PKG-INFO
 tissuecyte_annotation.egg-info/SOURCES.txt
 tissuecyte_annotation.egg-info/dependency_links.txt
