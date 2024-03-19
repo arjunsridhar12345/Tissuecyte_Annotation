@@ -1946,7 +1946,7 @@ class VolumeAlignment(QWidget):
                     prev_area = area
 
             item = pg.ScatterPlotItem(pos=[[80, i]], pen=QtGui.QPen(QColor(color)), brush=QtGui.QBrush(QColor(color)), size=5)
-            item_mask  = pg.ScatterPlotItem(pos=[[80, i]], pen=QtGui.QPen(QColor(color)), brush=QtGui.QBrush(QColor(color)), size=5)
+            item_mask  = pg.ScatterPlotItem(pos=[[80, i + 85]], pen=QtGui.QPen(QColor(color)), brush=QtGui.QBrush(QColor(color)), size=5)
             item.sigClicked.connect(self.onclickProbe)
             self.probeItems.append(item)
             self.probeMaskItems.append(item_mask)
