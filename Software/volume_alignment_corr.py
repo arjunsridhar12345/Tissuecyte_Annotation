@@ -230,11 +230,7 @@ class PlotDisplayItem():
         #print('Metric', metric)
         peak_values = self.averageMetricsChannels['peak_channel'].values.tolist()
         values = self.averageMetricsChannels[metric]
- 
-        if 'velocity' in metric:
-            values = (2 * (values - values.min()) / (values.max() - values.min())) - 1
-        else:
-            values = (values - values.min()) / (values.max() - values.min())
+        values = (values - values.mean()) / values.std()
 
         kernel_size = 10
         conv = np.ones(kernel_size) / kernel_size 
@@ -266,7 +262,7 @@ class PlotDisplayItem():
         #print(smoothed.shape)
         for i in range(self.max_range):
             if scale_value != 0:
-                self.channelsOriginal[i] = [(smoothed[i] * 50) - shift_value, self.channelsOriginal[i][1]]
+                self.channelsOriginal[i] = [(smoothed[i] * 20) - shift_value, self.channelsOriginal[i][1]]
             else:
                 self.channelsOriginal[i] = [(self.channelsOriginal[i][0][i]) - shift_value, self.channelsOriginal[i][1]]
         
@@ -473,6 +469,7 @@ class VolumeAlignment(QWidget):
 
         self.im8 = np.ones((self.height,self.width),dtype='uint8')*255
         self.image = pg.image(self.im8)
+
         self.image.ui.histogram.hide()
         self.image.ui.roiBtn.hide()
         self.image.ui.menuBtn.hide()
@@ -573,8 +570,7 @@ class VolumeAlignment(QWidget):
         self.mainLayout = QVBoxLayout()
         self.imageLayout = QHBoxLayout()
 
-        self.imageLayout.addWidget(self.image)
-        view = self.image.getView()
+        self.imageLayout.addWidget(self.image, 1)
         self.imageLayout.addWidget(self.imageMask)
 
         # ui features: probe/metric drop downs, red/green toggle, toggle probe, toggle mask, warp to ccf
@@ -832,7 +828,7 @@ class VolumeAlignment(QWidget):
 
     def resetPlotImage(self):
         self.resetPlot()
-        anchor = [self.plots['unit_density'].channels, self.plots[self.metrics.currentText().lower()].channels, self.anchorPts.copy(), 
+        anchor = [self.plots['unit_density'].channels, self.plots[self.metrics.currentText()].channels, self.anchorPts.copy(), 
                                                   self.pointsAdded.copy()] 
 
         self.alignments[self.probeDropDown.currentText()] = anchor 
@@ -844,7 +840,7 @@ class VolumeAlignment(QWidget):
             self.plots['unit_density'].resetPlot()
         
         if hasattr(self.plots[self.metrics.currentText()], 'channelsOriginal'):
-            self.plots[self.metrics.currentText().lower()].resetPlot()
+            self.plots[self.metrics.currentText()].resetPlot()
 
         self.showProbe = True
         view = self.image.getView()
@@ -1453,10 +1449,10 @@ class VolumeAlignment(QWidget):
         self.pointsAdded.remove(y_coord)
 
         self.plots['unit_density'].channelsPlot.setData(pos=np.array(self.plots['unit_density'].channels, dtype=float), adj=np.array(self.plots['unit_density'].adj, dtype=int))
-        self.plots[self.metrics.currentText().lower()].channelsPlot.setData(pos=np.array(self.plots[self.metrics.currentText().lower()].channels, dtype=float), 
-                                                                            adj=np.array(self.plots[self.metrics.currentText().lower()].adj, dtype=int))
+        self.plots[self.metrics.currentText()].channelsPlot.setData(pos=np.array(self.plots[self.metrics.currentText()].channels, dtype=float), 
+                                                                            adj=np.array(self.plots[self.metrics.currentText()].adj, dtype=int))
         self.plots['unit_density'].linearSpacePoints(self.pointsAdded)
-        self.plots[self.metrics.currentText().lower()].linearSpacePoints(self.pointsAdded)
+        self.plots[self.metrics.currentText()].linearSpacePoints(self.pointsAdded)
 
 
     # remove the line clicked on from the refinement display
@@ -1628,7 +1624,7 @@ class VolumeAlignment(QWidget):
         # update other plots to match alignment of unit density
         
         if is_unit:
-            self.updateAfterClick(self.plots[self.metrics.currentText().lower()], line_point, channel, self.pointsAdded)
+            self.updateAfterClick(self.plots[self.metrics.currentText()], line_point, channel, self.pointsAdded)
         else:
             self.updateAfterClick(self.plots['unit_density'], line_point, channel, self.pointsAdded)
         
@@ -1649,7 +1645,7 @@ class VolumeAlignment(QWidget):
             self.displayImageCCFAreas(y)
         
         if is_unit:
-            self.plots[self.metrics.currentText().lower()].linearSpacePoints(self.pointsAdded)
+            self.plots[self.metrics.currentText()].linearSpacePoints(self.pointsAdded)
         else:
             self.plots['unit_density'].linearSpacePoints(self.pointsAdded)
         
@@ -1658,7 +1654,7 @@ class VolumeAlignment(QWidget):
         #h_line.setClickable(True)
         h_line.sigClicked.connect(self.clickLine)
 
-        anchor = [self.plots['unit_density'].channels, self.plots[self.metrics.currentText().lower()].channels, self.anchorPts.copy(), 
+        anchor = [self.plots['unit_density'].channels, self.plots[self.metrics.currentText()].channels, self.anchorPts.copy(), 
                                               self.pointsAdded.copy()] 
 
         self.alignments[self.probeDropDown.currentText()] = anchor
@@ -1677,10 +1673,10 @@ class VolumeAlignment(QWidget):
             self.onClickProbeHelper(self.plots['unit_density'], line_point, is_unit=True)
         else:
             line_point = points[0].pos()
-            self.onClickProbeHelper(self.plots[self.metrics.currentText().lower()], line_point, is_unit=False)
+            self.onClickProbeHelper(self.plots[self.metrics.currentText()], line_point, is_unit=False)
 
         self.plots['unit_density'].channelsPlot.clicked = False
-        self.plots[self.metrics.currentText().lower()].channelsPlot.clicked = False
+        self.plots[self.metrics.currentText()].channelsPlot.clicked = False
     
     def refineSpline(self, new_y, dist):
         y = [p[1] for p in self.channels]
@@ -1798,9 +1794,9 @@ class VolumeAlignment(QWidget):
             self.anchorPts.pop(-1)
             self.pointsAdded.pop(-1)
             self.plots['unit_density'].linearSpacePoints(self.pointsAdded)
-            self.plots[self.metrics.currentText().lower()].linearSpacePoints(self.pointsAdded)
+            self.plots[self.metrics.currentText()].linearSpacePoints(self.pointsAdded)
 
-            anchor = [self.plots['unit_density'].channels, self.plots[self.metrics.currentText().lower()].channels, self.anchorPts.copy(), 
+            anchor = [self.plots['unit_density'].channels, self.plots[self.metrics.currentText()].channels, self.anchorPts.copy(), 
                                               self.pointsAdded.copy()] 
             self.alignments[self.probeDropDown.currentText()] = anchor
             self.saveAnchor(anchor)
@@ -1823,9 +1819,9 @@ class VolumeAlignment(QWidget):
                 self.anchorPts.pop(ind)
                 self.pointsAdded.pop(ind)
                 self.plots['unit_density'].linearSpacePoints(self.pointsAdded)
-                self.plots[self.metrics.currentText().lower()].linearSpacePoints(self.pointsAdded)
+                self.plots[self.metrics.currentText()].linearSpacePoints(self.pointsAdded)
 
-                anchor = [self.plots['unit_density'].channels, self.plots[self.metrics.currentText().lower()].channels, self.anchorPts.copy(), 
+                anchor = [self.plots['unit_density'].channels, self.plots[self.metrics.currentText()].channels, self.anchorPts.copy(), 
                                                   self.pointsAdded.copy()] 
                 self.alignments[self.probeDropDown.currentText()] = anchor
                 self.saveAnchor(anchor)
@@ -2107,7 +2103,7 @@ class VolumeAlignment(QWidget):
                 view.addItem(self.plots['unit_density'].channelsPlot)
                 view.addItem(self.plots['unit_density'].ogChannelsPlot)
                 self.displayPlotImage()
-                view.addItem(self.plots[self.metrics.currentText().lower()].channelsPlot)
+                view.addItem(self.plots[self.metrics.currentText()].channelsPlot)
 
                 #view.addItem(self.plItem)
         else: # read from dictionary storing saved plots for the probe
@@ -2116,14 +2112,14 @@ class VolumeAlignment(QWidget):
            
             self.plots['unit_density'].channels = plot_items[0].copy()
             self.plots['unit_density'].channelsPlot.setData(pos=np.array(plot_items[0], dtype=float), adj=np.array(self.plots['unit_density'].adj, dtype=int))
-            self.plots[self.metrics.currentText().lower()].channelsPlot.setData(pos=np.array(plot_items[1], dtype=float), adj=np.array(self.plots['unit_density'].adj, dtype=int))
-            self.plots[self.metrics.currentText().lower()].channels = plot_items[1].copy()
+            self.plots[self.metrics.currentText()].channelsPlot.setData(pos=np.array(plot_items[1], dtype=float), adj=np.array(self.plots['unit_density'].adj, dtype=int))
+            self.plots[self.metrics.currentText()].channels = plot_items[1].copy()
 
 
             view.addItem(self.plots['unit_density'].channelsPlot) # add unit plot
             self.plots['unit_density'].updatePlotChannelPositions(self.plots['unit_density'].channels)
             view.addItem(self.plots['unit_density'].ogChannelsPlot)
-            view.addItem(self.plots[self.metrics.currentText().lower()].channelsPlot) # add metric plot
+            view.addItem(self.plots[self.metrics.currentText()].channelsPlot) # add metric plot
             self.displayPlotImage()
             y = [t[1] for t in self.plots['unit_density'].channels]
             self.anchorPts = plot_items[2].copy() # add line pts
