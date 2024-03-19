@@ -258,6 +258,7 @@ class PlotDisplayItem():
         x_val = [p[0] for p in self.channelsOriginal]
         print('X_val', len(x_val))
         smoothed = np.convolve(x_val, conv, mode='same')
+        smoothed  = smoothed / np.max(np.abs(smoothed))
         #smoothed = smoothed / np.sum(conv)
         #print(smoothed.shape)
         for i in range(self.max_range):
@@ -570,7 +571,7 @@ class VolumeAlignment(QWidget):
         self.mainLayout = QVBoxLayout()
         self.imageLayout = QHBoxLayout()
 
-        self.imageLayout.addWidget(self.image, 1)
+        self.imageLayout.addWidget(self.image)
         self.imageLayout.addWidget(self.imageMask)
 
         # ui features: probe/metric drop downs, red/green toggle, toggle probe, toggle mask, warp to ccf
