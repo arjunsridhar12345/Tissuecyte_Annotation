@@ -263,7 +263,7 @@ class PlotDisplayItem():
         #print(smoothed.shape)
         for i in range(self.max_range):
             if scale_value != 0:
-                self.channelsOriginal[i] = [(smoothed[i] * 20) - shift_value, self.channelsOriginal[i][1]]
+                self.channelsOriginal[i] = [(smoothed[i] * 40) - shift_value, self.channelsOriginal[i][1]]
             else:
                 self.channelsOriginal[i] = [(self.channelsOriginal[i][0][i]) - shift_value, self.channelsOriginal[i][1]]
         
