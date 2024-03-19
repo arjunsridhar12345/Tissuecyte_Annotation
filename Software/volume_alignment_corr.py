@@ -230,7 +230,7 @@ class PlotDisplayItem():
         #print('Metric', metric)
         peak_values = self.averageMetricsChannels['peak_channel'].values.tolist()
         values = self.averageMetricsChannels[metric]
-        values = (values - values.mean()) / values.std()
+        #values = (values - values.mean()) / values.std()
 
         kernel_size = 10
         conv = np.ones(kernel_size) / kernel_size 
