@@ -163,6 +163,7 @@ class PlotDisplayItem():
             self.channelsPlot = Graph()
 
         self.ogChannelsPlot = Graph()
+        self.zeroChannelsPlot = Graph()
         #self.adj = [[i, i + 1] for i in range(len(self.channelsOriginal) - 1)]
         self.textItem = pg.TextItem(measurement.upper(), anchor=(1, 1))
 
@@ -208,8 +209,14 @@ class PlotDisplayItem():
             self.channelsOriginal = [[smoothed[i] - 100, self.channelsOriginal[i][1]] for i in range(len(self.channelsOriginal))]
 
             self.ogChannelsShift = [[p[0] - 200, p[1]] for p in self.channelsOriginal]
+            x_coord = [p[0] for p in self.ogChannelsShift]
 
             self.adj = [[i, i + 1] for i in range(len(self.channelsOriginal) - 1)]
+            self.zeroPlot = [[np.min(x_coord), i] for i in range(1000)]
+
+            self.zeroChannelsPlot.setData(pos=np.array(self.zeroPlot, dtype=float), adj=np.array(self.adj, dtype=int))
+            self.zeroChannelsPlot.scatter.setOpacity(0.1)
+
             self.ogChannelsPlot.setData(pos=np.array(self.ogChannelsShift, dtype=float), adj=np.array(self.adj, dtype=int))
         else:
             self.processMetrics(templeton=templeton, dr=dr)
@@ -476,13 +483,11 @@ class VolumeAlignment(QWidget):
         self.image.ui.menuBtn.hide()
         self.image.setObjectName('image')
 
-        self.imageMask = pg.image(self.im8)
-        self.imageMask.ui.histogram.hide()
-        self.imageMask.ui.roiBtn.hide()
-        self.imageMask.ui.menuBtn.hide()
-        self.imageMask.setObjectName('image')
+        self.imageMask = pg.ImageItem()
         #self.image.setImage(im8.transpose())
 
+        view = self.image.getView()
+        view.addItem(self.imageMask)
 
         self.pointsAdded = [] # y coords of alignments done
         self.channelCoords = {}
@@ -565,6 +570,7 @@ class VolumeAlignment(QWidget):
             for other in others:
                 self.plots[plot].otherPlots.append(self.plots[other]) # add other plots to list for updating 
 
+        view.addItem(self.plots['unit_density'].zeroChannelsPlot)
         #self.getColorVolume()
 
         # main layout with region of interest
@@ -572,7 +578,7 @@ class VolumeAlignment(QWidget):
         self.imageLayout = QHBoxLayout()
 
         self.imageLayout.addWidget(self.image)
-        self.imageLayout.addWidget(self.imageMask)
+        #self.imageLayout.addWidget(self.imageMask)
 
         # ui features: probe/metric drop downs, red/green toggle, toggle probe, toggle mask, warp to ccf
         self.probes = self.probeAnnotations['probe_name'].unique()
@@ -845,7 +851,7 @@ class VolumeAlignment(QWidget):
 
         self.showProbe = True
         view = self.image.getView()
-        view_mask = self.imageMask.getView()
+        #view_mask = self.imageMask.getView()
 
         if hasattr(self, 'plotImage') and self.prevProbe != self.probeDropDown.currentText():
             view.removeItem(self.plotImage)
@@ -879,8 +885,8 @@ class VolumeAlignment(QWidget):
                 for item in self.probeItems:
                     view.removeItem(item)
 
-                for item in self.probeMaskItems:
-                    view_mask.removeItem(item)
+                #for item in self.probeMaskItems:
+                    #view_mask.removeItem(item)
 
             self.ccfAreaItems.clear()
             self.probeItems.clear()
@@ -904,7 +910,7 @@ class VolumeAlignment(QWidget):
     def toggleProbe(self):
         print(self.showProbe)
         view = self.image.getView()
-        view_mask = self.imageMask.getView()
+        #view_mask = self.imageMask.getView()
 
         if self.showProbe:
             for item in self.ccfAreaItems:
@@ -913,8 +919,8 @@ class VolumeAlignment(QWidget):
             for item in self.probeItems:
                 view.removeItem(item)
 
-            for item in self.probeMaskItems:
-                view_mask.removeItem(item)
+            #for item in self.probeMaskItems:
+                #view_mask.removeItem(item)
 
             self.showProbe = False
         else:
@@ -924,8 +930,8 @@ class VolumeAlignment(QWidget):
             for item in self.probeItems:
                 view.addItem(item)
 
-            for item in self.probeMaskItems:
-                view_mask.addItem(item)
+            #for item in self.probeMaskItems:
+                #view_mask.addItem(item)
 
             self.showProbe = True
     
@@ -1920,7 +1926,7 @@ class VolumeAlignment(QWidget):
     def displayCCFAreas(self):
         color = 'cyan'
         view = self.image.getView()
-        view_mask = self.imageMask.getView()
+        #view_mask = self.imageMask.getView()
 
         prev_area = ''
         self.allAreas = {}
@@ -1946,13 +1952,12 @@ class VolumeAlignment(QWidget):
                     prev_area = area
 
             item = pg.ScatterPlotItem(pos=[[80, i]], pen=QtGui.QPen(QColor(color)), brush=QtGui.QBrush(QColor(color)), size=5)
-            item_mask  = pg.ScatterPlotItem(pos=[[80, i + 85]], pen=QtGui.QPen(QColor(color)), brush=QtGui.QBrush(QColor(color)), size=5)
+            item_mask  = pg.ScatterPlotItem(pos=[[self.image.pos().x() + 200 + self.imageMask.width() / 2, i - 15]], pen=QtGui.QPen(QColor(color)), brush=QtGui.QBrush(QColor(color)), size=5)
             item.sigClicked.connect(self.onclickProbe)
             self.probeItems.append(item)
             self.probeMaskItems.append(item_mask)
             view.addItem(item)
-            view_mask.addItem(item_mask)
-
+            view.addItem(item_mask)
 
     def removeImagePlotCCFAreas(self):
         view = self.image.getView()
@@ -2088,7 +2093,11 @@ class VolumeAlignment(QWidget):
         rot_mask = np.rot90(self.mask)
         flip_mask = np.flipud(rot_mask)
 
-        self.imageMask.setImage(flip_mask, levels=(0, 255), autoRange=False)
+        self.imageMask.setImage(flip_mask[:, 100:], levels=(0, 255), autoRange=False)
+        tr = QtGui.QTransform()
+        tr.translate(self.image.pos().x() + 200, 0)
+        self.imageMask.setTransform(tr)
+
         self.image.setImage(flip[:, 100:], levels=(0, 255), autoRange=False)
         view = self.image.getView()
 
