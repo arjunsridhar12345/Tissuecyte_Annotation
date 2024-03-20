@@ -239,7 +239,7 @@ class PlotDisplayItem():
         values = self.averageMetricsChannels[metric]
         #values = (values - values.mean()) / values.std()
 
-        kernel_size = 10
+        kernel_size = 5
         conv = np.ones(kernel_size) / kernel_size 
         self.channelsOriginal = []
         if max(peak_values) > 384:
@@ -273,7 +273,7 @@ class PlotDisplayItem():
                 self.channelsOriginal[i] = [(smoothed[i] * 40) - shift_value, self.channelsOriginal[i][1]]
             else:
                 self.channelsOriginal[i] = [(self.channelsOriginal[i][0][i]) - shift_value, self.channelsOriginal[i][1]]
-        
+
     def processMetrics(self, templeton=False, dr=False):
         if not templeton:
             if dr:
@@ -286,6 +286,7 @@ class PlotDisplayItem():
         #self.wnorm = (2 * (self.waveform_metrics - self.waveform_metrics.min()) / (self.waveform_metrics.max() - self.waveform_metrics.min())) - 1
 
         #self.wnorm['peak_channel'] = self.waveform_metrics['peak_channel']
+        self.waveform_metrics.fillna(0, inplace=True)
         self.averageMetricsChannels = (self.waveform_metrics.groupby('peak_channel').mean().reset_index())
 
         #print(self.averageMetricsChannels)
