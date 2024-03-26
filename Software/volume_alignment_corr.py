@@ -70,7 +70,13 @@ class Graph(pg.GraphItem):
             self.data['data']['index'] = np.arange(npts)
             self.setTexts(self.text)
             self.updateGraph()
-        
+
+            if 'alpha' in self.data:
+                for i in range(384):
+                    if self.data['alpha'][384 - i - 1] > 0.2:
+                        self.scatter.points()[i].setBrush(QtGui.QBrush(QColor('red')))
+                        self.scatter.points()[384 -i - 1].setPen(QtGui.QPen(QColor('red')))
+
     def setTexts(self, text):
         for i in self.textItems:
             i.scene().removeItem(i)
@@ -164,6 +170,9 @@ class PlotDisplayItem():
 
         self.ogChannelsPlot = Graph()
         self.zeroChannelsPlot = Graph()
+        self.zeroUnitChannelsPlot = Graph()
+        self.zeroMetricChannelsPlot = Graph()
+
         #self.adj = [[i, i + 1] for i in range(len(self.channelsOriginal) - 1)]
         self.textItem = pg.TextItem(measurement.upper(), anchor=(1, 1))
 
@@ -207,17 +216,21 @@ class PlotDisplayItem():
 
             smoothed = np.convolve(x_val, conv, mode='same')
             self.channelsOriginal = [[smoothed[i] - 100, self.channelsOriginal[i][1]] for i in range(len(self.channelsOriginal))]
+            x_coord_original = [p[0] for p in self.channelsOriginal]
 
             self.ogChannelsShift = [[p[0] - 200, p[1]] for p in self.channelsOriginal]
             x_coord = [p[0] for p in self.ogChannelsShift]
 
             self.adj = [[i, i + 1] for i in range(len(self.channelsOriginal) - 1)]
             self.zeroPlot = [[np.min(x_coord), i] for i in range(1000)]
+            self.zeroUnitPlot = [[np.min(x_coord_original), i] for i in range(1000)]
 
             self.zeroChannelsPlot.setData(pos=np.array(self.zeroPlot, dtype=float), adj=np.array(self.adj, dtype=int))
             self.zeroChannelsPlot.scatter.setOpacity(0.1)
+            self.zeroUnitChannelsPlot.setData(pos=np.array(self.zeroUnitPlot, dtype=float))
+            self.zeroUnitChannelsPlot.scatter.setOpacity(0.1)
 
-            self.ogChannelsPlot.setData(pos=np.array(self.ogChannelsShift, dtype=float), adj=np.array(self.adj, dtype=int))
+            self.ogChannelsPlot.setData(pos=np.array(self.ogChannelsShift, dtype=float), adj=None)
         else:
             self.processMetrics(templeton=templeton, dr=dr)
             self.generateMetricChannels(measurement, scale_value=1/5, shift_value=170)
@@ -227,19 +240,34 @@ class PlotDisplayItem():
         self.ogChannelsShift = [[self.ogChannelsShift[i][0], self.max_range - i - 1 + 256] for i in range(self.max_range)]
 
         self.adj = [[i, i + 1] for i in range(len(self.channelsOriginal) - 1)]
-        self.ogChannelsPlot.setData(pos=np.array(self.ogChannelsShift, dtype=float), adj=np.array(self.adj, dtype=int))
+        self.ogChannelsPlot.setData(pos=np.array(self.ogChannelsShift, dtype=float), adj=None)
 
+    def channelwise_median(self, metricsdf, metric, smooth_kernel=5):
+        channelwise_median = []
+        channelwise_count = []
+        for i in range(384):
+            channeldata = metricsdf[metricsdf['peak_channel'].isin(np.arange(i-smooth_kernel, i+smooth_kernel+1))]
+            if len(channeldata)<5:
+                channelwise_median.append(np.nan)
+            else:
+                channelwise_median.append(np.nanmedian(channeldata[metric]))
+            channelwise_count.append(len(channeldata))
+
+        channelwise_median = channelwise_median / np.nanmax(np.abs(channelwise_median))
+        return channelwise_median, np.array(channelwise_count)
+    
     # helper function to generate the metric channels
     # metric: string
     # scale_value: float, value to scale the plot by this amount when displayed
     # shit_value: int, value to shift the plot by this amount when displayed
     def generateMetricChannels(self, metric, scale_value, shift_value):
+        """
         #print('Metric', metric)
         peak_values = self.averageMetricsChannels['peak_channel'].values.tolist()
         values = self.averageMetricsChannels[metric]
         #values = (values - values.mean()) / values.std()
 
-        kernel_size = 5
+        kernel_size = 10
         conv = np.ones(kernel_size) / kernel_size 
         self.channelsOriginal = []
         if max(peak_values) > 384:
@@ -249,14 +277,14 @@ class PlotDisplayItem():
 
         for i in range(self.max_range):
             if i in peak_values:
-                """
+                
                 index = peak_values.index(i)
                 if not pd.isna(values[index]):
                     self.channelsOriginal.append([values[index], 384 - i - 1 + 256])
                 else:
                     self.channelsOriginal.append([np.nan, 384 - i - 1 + 256])
                 #conv[index] = 1
-                """
+                
                 index = peak_values.index(i)
                 self.channelsOriginal.append([values[index], self.max_range - i - 1 + 256])
             else:
@@ -267,12 +295,31 @@ class PlotDisplayItem():
         smoothed = np.convolve(x_val, conv, mode='same')
         smoothed  = smoothed / np.max(np.abs(smoothed))
         #smoothed = smoothed / np.sum(conv)
+        """
+        self.channelsOriginal = []
+        peak_values = self.waveform_metrics['peak_channel'].values.tolist()
+        if max(peak_values) > 384:
+            self.max_range = 768
+        else:
+            self.max_range = 384
+
+        df_metric, df_counts = self.channelwise_median(self.waveform_metrics, metric, smooth_kernel=10)
+        df_metric = np.array(df_metric)
+        
+        df_counts = df_counts/100
+        df_counts[df_counts>1] = 1
+        self.alpha = df_counts
+        
         #print(smoothed.shape)
         for i in range(self.max_range):
-            if scale_value != 0:
-                self.channelsOriginal[i] = [(smoothed[i] * 40) - shift_value, self.channelsOriginal[i][1]]
-            else:
-                self.channelsOriginal[i] = [(self.channelsOriginal[i][0][i]) - shift_value, self.channelsOriginal[i][1]]
+            self.channelsOriginal.append([(df_metric[i] * 40) - shift_value, self.max_range - i - 1 + 256])
+
+        self.adj = [[i, i + 1] for i in range(len(self.channelsOriginal) - 1)]
+        self.channelsPlot.setData(pos=np.array(self.channelsOriginal, dtype=float), adj=None, alpha=self.alpha)
+        x_coord = [[p[0] for p in self.channelsOriginal if not pd.isna(p[0])]]
+        self.zeroMetric = [[np.min(x_coord), i] for i in range(1000)]
+        self.zeroMetricChannelsPlot.setData(pos=np.array(self.zeroMetric, dtype=float))
+        self.zeroMetricChannelsPlot.scatter.setOpacity(0.1)
 
     def processMetrics(self, templeton=False, dr=False):
         if not templeton:
@@ -287,7 +334,7 @@ class PlotDisplayItem():
 
         #self.wnorm['peak_channel'] = self.waveform_metrics['peak_channel']
         self.waveform_metrics.fillna(0, inplace=True)
-        self.averageMetricsChannels = (self.waveform_metrics.groupby('peak_channel').mean().reset_index())
+        #self.averageMetricsChannels = (self.waveform_metrics.groupby('peak_channel').mean().reset_index())
 
         #print(self.averageMetricsChannels)
         #self.averageMetricsChannels = (self.averageMetricsChannels - self.averageMetricsChannels.mean()) / self.averageMetricsChannels.std()
@@ -297,7 +344,11 @@ class PlotDisplayItem():
     def resetPlot(self, remove_probe=False):
         self.channels = self.channelsOriginal
         self.adj = [[i, i + 1] for i in range(len(self.channelsOriginal) - 1)]
-        self.channelsPlot.setData(pos=np.array(self.channels, dtype=float), adj=np.array(self.adj, dtype=int))
+
+        if hasattr(self, 'alpha'):
+            self.channelsPlot.setData(pos=np.array(self.channels, dtype=float), adj=None, alpha=self.alpha)
+        else:
+            self.channelsPlot.setData(pos=np.array(self.channels, dtype=float), adj=None)
 
     # helper function for shfiting points when new alignment is added
     # returns closest value to K
@@ -339,7 +390,10 @@ class PlotDisplayItem():
                 self.replaceValues(lp, points_between) # replace values with new interpolation
                 #print(len(self.channels))
 
-            self.channelsPlot.setData(pos=np.array(self.channels, dtype=float), adj=np.array(self.adj, dtype=int))
+            if hasattr(self, 'alpha'):
+                self.channelsPlot.setData(pos=np.array(self.channels, dtype=float), adj=None, alpha=self.alpha)
+            else:
+                self.channelsPlot.setData(pos=np.array(self.channels, dtype=float), adj=None)
 
     # for alignments above current channel
     # shift up, i.e. subtract
@@ -409,7 +463,11 @@ class PlotDisplayItem():
             self.ogPoints = newPoints
             self.channels = newPoints
             self.adj = [[i, i + 1] for i in range(len(self.channelsOriginal) - 1)]
-            self.channelsPlot.setData(pos=np.array(self.channels, dtype=float), adj=np.array(self.adj, dtype=int))
+
+            if hasattr(self, 'alpha'):
+                self.channelsPlot.setData(pos=np.array(self.channels, dtype=float), adj=None, alpha=self.alpha)
+            else:
+                self.channelsPlot.setData(pos=np.array(self.channels, dtype=float), adj=None)
         else: # some alignment has been done already, so use existing coordinates
             newPoints = [] 
             for i in range(len(self.channelsOriginal)):
@@ -418,7 +476,12 @@ class PlotDisplayItem():
             self.ogPoints = newPoints
             self.channels = newPoints
             self.adj = [[i, i + 1] for i in range(len(self.channelsOriginal) - 1)]
-            self.channelsPlot.setData(pos=np.array(self.channels, dtype=float), adj=np.array(self.adj, dtype=int))
+                
+            if hasattr(self, 'alpha'):
+                self.channelsPlot.setData(pos=np.array(self.channels, dtype=float), adj=None, alpha=self.alpha)
+            else:
+                self.channelsPlot.setData(pos=np.array(self.channels, dtype=float), adj=None)
+
             self.linearSpacePoints(points_added)
 
 # class to do the alignment between channels and regions
@@ -484,11 +547,14 @@ class VolumeAlignment(QWidget):
         self.image.ui.menuBtn.hide()
         self.image.setObjectName('image')
 
-        self.imageMask = pg.ImageItem()
+        self.imageMask = pg.image(self.im8)
+        self.imageMask.ui.histogram.hide()
+        self.imageMask.ui.roiBtn.hide()
+        self.imageMask.ui.menuBtn.hide()
+        self.imageMask.setObjectName('image')
         #self.image.setImage(im8.transpose())
 
         view = self.image.getView()
-        view.addItem(self.imageMask)
 
         self.pointsAdded = [] # y coords of alignments done
         self.channelCoords = {}
@@ -572,14 +638,16 @@ class VolumeAlignment(QWidget):
                 self.plots[plot].otherPlots.append(self.plots[other]) # add other plots to list for updating 
 
         view.addItem(self.plots['unit_density'].zeroChannelsPlot)
+        view.addItem(self.plots['unit_density'].zeroUnitChannelsPlot)
+        
         #self.getColorVolume()
 
         # main layout with region of interest
         self.mainLayout = QVBoxLayout()
         self.imageLayout = QHBoxLayout()
 
-        self.imageLayout.addWidget(self.image)
-        #self.imageLayout.addWidget(self.imageMask)
+        self.imageLayout.addWidget(self.image, stretch=7)
+        self.imageLayout.addWidget(self.imageMask, stretch=3)
 
         # ui features: probe/metric drop downs, red/green toggle, toggle probe, toggle mask, warp to ccf
         self.probes = self.probeAnnotations['probe_name'].unique()
@@ -628,7 +696,12 @@ class VolumeAlignment(QWidget):
         self.sliderLayout.addRow('Red Slider', self.redSlider)
         self.sliderLayout.addRow('Green Slider', self.greenSlider)
 
-        
+        self.correlationDropDown = QComboBox()
+        self.correlationDropDown.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.correlationDropDown.currentTextChanged.connect(self.correlationChanged)
+        self.correlationDropDown.addItem('Full')
+        self.correlationDropDown.addItem('Task')
+
         self.metrics = QComboBox()
         self.metrics.setFocusPolicy(QtCore.Qt.NoFocus)
         self.metrics.currentTextChanged.connect(self.metricChanged)
@@ -636,6 +709,7 @@ class VolumeAlignment(QWidget):
             if metric != 'peak_channel':
                 self.metrics.addItem(metric)
         
+        view.addItem(self.plots[self.metrics.currentText()].zeroMetricChannelsPlot)
 
         self.toggleProbeButton = QPushButton('Toggle Probe')
         self.toggleProbeButton.clicked.connect(self.toggleProbe)
@@ -693,6 +767,7 @@ class VolumeAlignment(QWidget):
         self.probeViewLayout = QHBoxLayout()
         self.probeViewLayout.addWidget(self.probeDropDown)
         self.probeViewLayout.addWidget(self.metrics)
+        self.probeViewLayout.addWidget(self.correlationDropDown)
         #self.probeViewLayout.addWidget(self.toggleProbeButton)
         self.probeViewLayout.addWidget(self.viewButton)
         self.probeViewLayout.addWidget(self.resetPlotButton)
@@ -852,7 +927,7 @@ class VolumeAlignment(QWidget):
 
         self.showProbe = True
         view = self.image.getView()
-        #view_mask = self.imageMask.getView()
+        view_mask = self.imageMask.getView()
 
         if hasattr(self, 'plotImage') and self.prevProbe != self.probeDropDown.currentText():
             view.removeItem(self.plotImage)
@@ -886,8 +961,8 @@ class VolumeAlignment(QWidget):
                 for item in self.probeItems:
                     view.removeItem(item)
 
-                #for item in self.probeMaskItems:
-                    #view_mask.removeItem(item)
+                for item in self.probeMaskItems:
+                    view_mask.removeItem(item)
 
             self.ccfAreaItems.clear()
             self.probeItems.clear()
@@ -1456,9 +1531,10 @@ class VolumeAlignment(QWidget):
         self.lineItems.remove(item)
         self.pointsAdded.remove(y_coord)
 
-        self.plots['unit_density'].channelsPlot.setData(pos=np.array(self.plots['unit_density'].channels, dtype=float), adj=np.array(self.plots['unit_density'].adj, dtype=int))
+        self.plots['unit_density'].channelsPlot.setData(pos=np.array(self.plots['unit_density'].channels, dtype=float), adj=None)
+
         self.plots[self.metrics.currentText()].channelsPlot.setData(pos=np.array(self.plots[self.metrics.currentText()].channels, dtype=float), 
-                                                                            adj=np.array(self.plots[self.metrics.currentText()].adj, dtype=int))
+                                                                            adj=None, alpha=self.plots[self.metrics.currentText()].alpha)
         self.plots['unit_density'].linearSpacePoints(self.pointsAdded)
         self.plots[self.metrics.currentText()].linearSpacePoints(self.pointsAdded)
 
@@ -1536,7 +1612,7 @@ class VolumeAlignment(QWidget):
             if flag:
                 other_plot.channels = newPoints
             #if len(self.pointsAdded) == 1:
-            other_plot.channelsPlot.setData(pos=np.array(other_plot.channels, dtype=float), adj=np.array(other_plot.adj, dtype=int))
+            other_plot.channelsPlot.setData(pos=np.array(other_plot.channels, dtype=float), adj=None, alpha=other_plot.alpha)
 
         #other_plot.linearSpacePoints(pointsAdded)
 
@@ -1610,7 +1686,7 @@ class VolumeAlignment(QWidget):
             if flag:
                 click_plot.channels = newPoints
             #if len(self.pointsAdded) == 1:
-            click_plot.channelsPlot.setData(pos=np.array(click_plot.channels, dtype=float), adj=np.array(click_plot.adj, dtype=int))
+            click_plot.channelsPlot.setData(pos=np.array(click_plot.channels, dtype=float), adj=None)
            
             pts = [[t, line_point[1]] for t in range(int(click_plot.channelsPlot.scatterPoint[0]), int(line_point[0]))]
             self.anchorPts.append(pts)
@@ -1927,7 +2003,7 @@ class VolumeAlignment(QWidget):
     def displayCCFAreas(self):
         color = 'cyan'
         view = self.image.getView()
-        #view_mask = self.imageMask.getView()
+        view_mask = self.imageMask.getView()
 
         prev_area = ''
         self.allAreas = {}
@@ -1953,12 +2029,12 @@ class VolumeAlignment(QWidget):
                     prev_area = area
 
             item = pg.ScatterPlotItem(pos=[[80, i]], pen=QtGui.QPen(QColor(color)), brush=QtGui.QBrush(QColor(color)), size=5)
-            item_mask  = pg.ScatterPlotItem(pos=[[self.image.pos().x() + 200 + self.imageMask.width() / 2, i - 15]], pen=QtGui.QPen(QColor(color)), brush=QtGui.QBrush(QColor(color)), size=5)
+            item_mask  = pg.ScatterPlotItem(pos=[[160, i - 15]], pen=QtGui.QPen(QColor(color)), brush=QtGui.QBrush(QColor(color)), size=5)
             item.sigClicked.connect(self.onclickProbe)
             self.probeItems.append(item)
             self.probeMaskItems.append(item_mask)
             view.addItem(item)
-            view.addItem(item_mask)
+            view_mask.addItem(item_mask)
 
     def removeImagePlotCCFAreas(self):
         view = self.image.getView()
@@ -2011,15 +2087,26 @@ class VolumeAlignment(QWidget):
         self.plotImage.setTransform(QtGui.QTransform(*transform))
         #view.addItem(self.plotImage)
 
+    def correlationChanged(self):
+        self.displayPlotImage()
+
     # displays the plot image: correlation, etc.
     # data: dict with plot info
     def displayPlotImage(self):
+        if not hasattr(self, 'path'):
+            return
+        
         probe = self.probeDropDown.currentText()
         probe = probe[probe.index(' ')+1:]
-        with open(pathlib.Path(self.storageDirectory, 'image_plots', '{}_corr.pickle'.format(probe)), 'rb') as f:
+        with open(pathlib.Path(self.storageDirectory, 'image_plots', '{}_corr_{}.pickle'.format(probe, 
+                                                                                                self.correlationDropDown.currentText().lower()))
+                                                                                                , 'rb') as f:
             data = pickle.load(f)
 
         view = self.image.getView()
+        if hasattr(self, 'plotImage'):
+            view.removeItem(self.plotImage)
+
         self.plotImage = pg.ImageItem()
         #print(data)
         rot = np.rot90(np.rot90(data['img']))
@@ -2050,7 +2137,15 @@ class VolumeAlignment(QWidget):
         else:
             self.plotImage.setLevels((1, 0))
 
+        if hasattr(self, 'plotImageItems'):
+            for item in self.plotImageItems:
+                view.removeItem(item)
+
         view.addItem(self.plotImage)
+
+        if hasattr(self, 'plotImageItems'):
+            for item in self.plotImageItems:
+                view.addItem(item)
 
     # displays the region along the probe track
     # probe: string, the probe to be displayed from the drop down
@@ -2096,8 +2191,9 @@ class VolumeAlignment(QWidget):
 
         self.imageMask.setImage(flip_mask[:, 100:], levels=(0, 255), autoRange=False)
         tr = QtGui.QTransform()
-        tr.translate(self.image.pos().x() + 200, 0)
-        self.imageMask.setTransform(tr)
+        tr.scale(2, 1)
+        #tr.translate(self.image.pos().x() + 50, 0)
+        self.imageMask.getImageItem().setTransform(tr)
 
         self.image.setImage(flip[:, 100:], levels=(0, 255), autoRange=False)
         view = self.image.getView()
@@ -2122,8 +2218,9 @@ class VolumeAlignment(QWidget):
             plot_items = self.alignments[probe]
            
             self.plots['unit_density'].channels = plot_items[0].copy()
-            self.plots['unit_density'].channelsPlot.setData(pos=np.array(plot_items[0], dtype=float), adj=np.array(self.plots['unit_density'].adj, dtype=int))
-            self.plots[self.metrics.currentText()].channelsPlot.setData(pos=np.array(plot_items[1], dtype=float), adj=np.array(self.plots['unit_density'].adj, dtype=int))
+            self.plots['unit_density'].channelsPlot.setData(pos=np.array(plot_items[0], dtype=float), adj=None)
+            self.plots[self.metrics.currentText()].channelsPlot.setData(pos=np.array(plot_items[1], dtype=float), adj=None, 
+                                                                        alpha=self.plots[self.metrics.currentText()].alpha)
             self.plots[self.metrics.currentText()].channels = plot_items[1].copy()
 
 

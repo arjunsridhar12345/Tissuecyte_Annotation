@@ -167,14 +167,14 @@ def save_refinement_metrics(session: npc_session.SessionRecord, session_surface:
         peak_channels = list(npc_ephys.get_amplitudes_waveforms_channels_ks25(spike_interface_data, electrode_group_name=probe).peak_channels)
         spike_times = spike_interface_data.spike_indexes(probe) / SAMPLING_RATE
         spike_clusters = spike_interface_data.unit_indexes(probe)
-        channel_positions = get_channel_positions(npc_lims.get_settings_xml_path_from_s3(session))
+        channel_positions = get_channel_positions(upath.UPath(r"\\allen\programs\mindscope\workgroups\np-behavior\tissuecyte\plots\settings_main.xml"))
 
         if session_surface is not None:
             spike_interface_data_surface = npc_ephys.SpikeInterfaceKS25Data(session_surface)
             peak_channels_surface = list(npc_ephys.get_amplitudes_waveforms_channels_ks25(spike_interface_data_surface, electrode_group_name=probe).peak_channels)
             spike_times_surface = spike_interface_data_surface.spike_indexes(probe) / SAMPLING_RATE
             spike_clusters_surface = spike_interface_data_surface.unit_indexes(probe)
-            channel_positions_surface = get_channel_positions(npc_lims.get_settings_xml_path_from_s3(session_surface))
+            channel_positions_surface = get_channel_positions(upath.UPath(r"\\allen\programs\mindscope\workgroups\np-behavior\tissuecyte\plots\settings_surface.xml"))
 
             peak_channels_surface = [peak_channel + 384 for peak_channel in peak_channels_surface]
             spike_times_surface = spike_times_surface + (spike_times[-1] + 1)
@@ -185,7 +185,7 @@ def save_refinement_metrics(session: npc_session.SessionRecord, session_surface:
             spike_clusters = np.concatenate((spike_clusters, spike_clusters_surface))
             spike_times = np.concatenate((spike_times, spike_times_surface))
 
-    
+
         cluster_difference = np.max(spike_clusters) - len(spike_interface_data.unit_locations(probe)) + 1
         if cluster_difference > 0:
             spike_clusters = spike_clusters - cluster_difference
@@ -199,12 +199,13 @@ def get_annotation_data_for_mouse(mouse_id:str) -> None:
     
     sessions = npc_lims.get_sessions_with_data_assets(mouse_id)
     for session in sessions:
-        save_refinement_metrics(session)
+        if session.id != '681532_2023-10-17_0' and session.id != '681532_2023-10-19_0':
+            save_refinement_metrics(session)
     
     get_correlation_data(mouse_id)
     
 if __name__ == '__main__':
     #args = parser.parse_args()
     #mouse_id = args.mouseID
-    mouse_id = '667252'
+    mouse_id = '681532'
     get_annotation_data_for_mouse(mouse_id)
