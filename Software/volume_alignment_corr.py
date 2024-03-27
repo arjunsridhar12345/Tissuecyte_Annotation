@@ -74,8 +74,10 @@ class Graph(pg.GraphItem):
             if 'alpha' in self.data:
                 for i in range(384):
                     if self.data['alpha'][384 - i - 1] > 0.2:
-                        self.scatter.points()[i].setBrush(QtGui.QBrush(QColor('red')))
-                        self.scatter.points()[384 -i - 1].setPen(QtGui.QPen(QColor('red')))
+                        self.scatter.points()[384 - i - 1].setBrush(QtGui.QBrush(QColor('red')))
+                        self.scatter.points()[384 - i - 1].setPen(QtGui.QPen(QColor('red')))
+
+                    self.scatter.points()[i].setSymbol('o')
 
     def setTexts(self, text):
         for i in self.textItems:
@@ -701,6 +703,7 @@ class VolumeAlignment(QWidget):
         self.correlationDropDown.currentTextChanged.connect(self.correlationChanged)
         self.correlationDropDown.addItem('Full')
         self.correlationDropDown.addItem('Task')
+        self.correlationDropDown.addItem('Spont')
 
         self.metrics = QComboBox()
         self.metrics.setFocusPolicy(QtCore.Qt.NoFocus)
@@ -710,6 +713,10 @@ class VolumeAlignment(QWidget):
                 self.metrics.addItem(metric)
         
         view.addItem(self.plots[self.metrics.currentText()].zeroMetricChannelsPlot)
+
+        self.snapImageButton = QPushButton('Snap ccf image')
+        self.snapImageButton.clicked.connect(self.snapImage)
+        self.snapImageButton.setFocusPolicy(QtCore.Qt.NoFocus)
 
         self.toggleProbeButton = QPushButton('Toggle Probe')
         self.toggleProbeButton.clicked.connect(self.toggleProbe)
@@ -768,6 +775,7 @@ class VolumeAlignment(QWidget):
         self.probeViewLayout.addWidget(self.probeDropDown)
         self.probeViewLayout.addWidget(self.metrics)
         self.probeViewLayout.addWidget(self.correlationDropDown)
+        self.probeViewLayout.addWidget(self.snapImageButton)
         #self.probeViewLayout.addWidget(self.toggleProbeButton)
         self.probeViewLayout.addWidget(self.viewButton)
         self.probeViewLayout.addWidget(self.resetPlotButton)
@@ -810,7 +818,7 @@ class VolumeAlignment(QWidget):
         dr_min_distance.min_distance_table()
         dr_min_distance.min_displacement_vector_table()
         dr_insertion_hit_rate.insertion_hit_rate_table()
-        clean_structure_acronym.clean_channel_annotations(self.mouseID)
+        #clean_structure_acronym.clean_channel_annotations(self.mouseID)
 
     def redSliderMoved(self):
         if not self.isRedChecked:
@@ -833,6 +841,10 @@ class VolumeAlignment(QWidget):
                 self.image.setImage(flip[:, 100:], levels=(0, 255), autoRange=False)
             else:
                 self.showMaskHelper()
+
+    def snapImage(self):
+        main_rectangle = (self.image.pos().x(), self.image.pos().y(), self.imageMask.width(), self.imageMask.height())
+        self.imageMask.getImageItem().setRect(main_rectangle[0], main_rectangle[1], main_rectangle[2], main_rectangle[3])
 
     # function to bring mask back 
     def showMaskHelper(self):
@@ -1247,6 +1259,7 @@ class VolumeAlignment(QWidget):
 
         df = pd.DataFrame(dict_final)
         df.to_csv(os.path.join(self.storageDirectory, '{}_channels_{}_warped.csv'.format(probe_name.replace(' ', '_'), self.mouseID)), index=False)
+        clean_structure_acronym.clean_channel_annotations(self.mouseID)
         popup = QMessageBox()
         popup.setText('Channel regions saved')
         popup.exec_()
