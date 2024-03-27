@@ -73,11 +73,8 @@ class Graph(pg.GraphItem):
 
             if 'alpha' in self.data:
                 for i in range(384):
-                    if self.data['alpha'][384 - i - 1] > 0.2:
-                        self.scatter.points()[384 - i - 1].setBrush(QtGui.QBrush(QColor('red')))
-                        self.scatter.points()[384 - i - 1].setPen(QtGui.QPen(QColor('red')))
-
-                    self.scatter.points()[i].setSymbol('o')
+                    self.scatter.points()[384 - i - 1].setBrush(QtGui.QBrush(QColor(255, 0, 0, int(self.data['alpha'][384 - i - 1] * 255))))
+                    self.scatter.points()[384 - i - 1].setPen(QtGui.QPen(QColor(255, 0, 0, int(self.data['alpha'][384 - i - 1] * 255))))
 
     def setTexts(self, text):
         for i in self.textItems:
@@ -648,8 +645,8 @@ class VolumeAlignment(QWidget):
         self.mainLayout = QVBoxLayout()
         self.imageLayout = QHBoxLayout()
 
-        self.imageLayout.addWidget(self.image, stretch=7)
-        self.imageLayout.addWidget(self.imageMask, stretch=3)
+        self.imageLayout.addWidget(self.image, stretch=8)
+        self.imageLayout.addWidget(self.imageMask, stretch=2)
 
         # ui features: probe/metric drop downs, red/green toggle, toggle probe, toggle mask, warp to ccf
         self.probes = self.probeAnnotations['probe_name'].unique()
