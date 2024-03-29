@@ -68,26 +68,25 @@ def get_structure_acronym(point:tuple[int, int, int]) -> str:
     
     return label
 
-def clean_channel_annotations(mouse_id: str) -> None:
-    annotation_path = pathlib.Path(f'//allen/programs/mindscope/workgroups/np-behavior/tissuecyte/{mouse_id}')
-    channels_paths = tuple(annotation_path.glob(f'*_channels_{mouse_id}_warped.csv'))
+def clean_channel_annotations(df_channels: pd.DataFrame) -> None:
+    #annotation_path = pathlib.Path(f'//allen/programs/mindscope/workgroups/np-behavior/tissuecyte/{mouse_id}')
+    #channels_paths = tuple(annotation_path.glob(f'*_channels_{mouse_id}_warped.csv'))
 
-    for channel_path in channels_paths:
-        df_channels = pd.read_csv(channel_path)
-        for index, row in df_channels.iterrows():
-            if pd.isna(row.region) or row.region == 'out of brain':
-                label = get_structure_acronym((row.AP, row.DV, row.ML))
-                df_channels.loc[index, 'region'] = label
-        
-        df_channels['region_stripped'] = strip_subregions_list(df_channels['region'].tolist())
+    #for channel_path in channels_paths:
+    for index, row in df_channels.iterrows():
+        if pd.isna(row.region) or row.region == 'out of brain':
+            label = get_structure_acronym((row.AP, row.DV, row.ML))
+            df_channels.loc[index, 'region'] = label
+    
+    df_channels['region_stripped'] = strip_subregions_list(df_channels['region'].tolist())
 
-        output_path = pathlib.Path('//allen/programs/mindscope/workgroups/dynamicrouting/arjun')
-        output_dir = output_path / mouse_id
-        if not output_dir.exists():
-            output_dir.mkdir()
-        
-        file_name = channel_path.stem + '_processed.csv'
-        df_channels.to_csv(output_dir / file_name, index=False)
+    output_path = pathlib.Path('//allen/programs/mindscope/workgroups/dynamicrouting/arjun')
+    output_dir = output_path / mouse_id
+    if not output_dir.exists():
+        output_dir.mkdir()
+    
+    file_name = channel_path.stem + '_processed.csv'
+    df_channels.to_csv(output_dir / file_name, index=False)
     
 if __name__ == '__main__':
     args = parser.parse_args()
