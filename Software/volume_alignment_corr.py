@@ -1629,6 +1629,12 @@ class VolumeAlignment(QWidget):
 
     # pefroms alignment on the unit density plot
     def onClickProbeHelper(self, click_plot, line_point, is_unit=True, channel=-1, scatter_point=None, color='yellow', arrow_key=False):
+        if not self.plots['unit_density'].channelsPlot.clicked:
+            popup = QMessageBox()
+            popup.setText('No point clicked on unit density')
+            popup.exec_()
+            return
+        
         if channel == -1:
             channel = click_plot.channels.index([click_plot.channelsPlot.scatterPoint[0], click_plot.channelsPlot.scatterPoint[1]]) # get index of point clicked on in unit density
         else:
