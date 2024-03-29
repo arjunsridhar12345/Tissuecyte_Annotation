@@ -97,7 +97,7 @@ After the reassignments have been done, open a command prompt terminal and ssh i
 ### Refinement App
 This app allows for the alignment of the 384 channels to the corresponding regions of interest. Run the command `python volume_alignment.py --mouseID <mouseID>`
 
-For dynamic routing experiments, run the command `python volume_alignment_corr.py --mouseID <mouseID>`
+For dynamic routing experiments, run the command `python volume_alignment_corr.py --mouseID <mouseID> --dr yes`
 
 The probe and the desired metric that will be displayed along with the unit density are shown in the drop downs. The unit density will always be the plot closest to the red probe track.
 
