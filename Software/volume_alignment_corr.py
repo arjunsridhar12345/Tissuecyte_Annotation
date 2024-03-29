@@ -1256,7 +1256,8 @@ class VolumeAlignment(QWidget):
 
         df = pd.DataFrame(dict_final)
         df.to_csv(os.path.join(self.storageDirectory, '{}_channels_{}_warped.csv'.format(probe_name.replace(' ', '_'), self.mouseID)), index=False)
-        clean_structure_acronym.clean_channel_annotations(df)
+        path = pathlib.Path('{}_channels_{}_warped.csv'.format(probe_name.replace(' ', '_'), self.mouseID))
+        clean_structure_acronym.clean_channel_annotations(mouse_id, path, df)
         popup = QMessageBox()
         popup.setText('Channel regions saved')
         popup.exec_()

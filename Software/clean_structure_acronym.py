@@ -68,7 +68,7 @@ def get_structure_acronym(point:tuple[int, int, int]) -> str:
     
     return label
 
-def clean_channel_annotations(df_channels: pd.DataFrame) -> None:
+def clean_channel_annotations(mouse_id, channel_path, df_channels: pd.DataFrame) -> None:
     #annotation_path = pathlib.Path(f'//allen/programs/mindscope/workgroups/np-behavior/tissuecyte/{mouse_id}')
     #channels_paths = tuple(annotation_path.glob(f'*_channels_{mouse_id}_warped.csv'))
 
