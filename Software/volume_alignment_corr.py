@@ -310,7 +310,7 @@ class PlotDisplayItem():
         self.alpha = df_counts
         
         #print(smoothed.shape)
-        for i in range(self.max_range):
+        for i in range(384):
             self.channelsOriginal.append([(df_metric[i] * 40) - shift_value, self.max_range - i - 1 + 256])
 
         self.adj = [[i, i + 1] for i in range(len(self.channelsOriginal) - 1)]
@@ -1512,6 +1512,7 @@ class VolumeAlignment(QWidget):
                         self.plots['unit_density'].updateMetrics(self.path, self.templeton, self.dr)
                         self.updateDisplay(probe)
 
+                    print('Path', self.path)
                     if self.path != '':
                         self.plots['unit_density'].updateMetrics(self.path, self.templeton, self.dr)
                         self.plots['unit_density'].updateDisplay(probe, self.linepts, self.intensityValues) # update display since no existing alignment has been done so far
@@ -1525,7 +1526,7 @@ class VolumeAlignment(QWidget):
                         popup = QMessageBox()
                         popup.setText('Couldn\'t find metrics.csv for {}'.format(probe))
                         popup.exec_()
-            except (FileNotFoundError, IndexError, KeyError): # metrics file not found
+            except (FileNotFoundError, IndexError, KeyError) as e: # metrics file not found
                 view.removeItem(self.plots['unit_density'].channelsPlot)
                 view.removeItem(self.plots[metric].channelsPlot)
                 self.resetPlot()
