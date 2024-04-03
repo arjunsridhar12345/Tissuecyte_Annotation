@@ -72,9 +72,9 @@ class Graph(pg.GraphItem):
             self.updateGraph()
 
             if 'alpha' in self.data:
-                for i in range(384):
-                    self.scatter.points()[384 - i - 1].setBrush(QtGui.QBrush(QColor(255, 0, 0, int(self.data['alpha'][384 - i - 1] * 255))))
-                    self.scatter.points()[384 - i - 1].setPen(QtGui.QPen(QColor(255, 0, 0, int(self.data['alpha'][384 - i - 1] * 255))))
+                for i in range(self.data['range']):
+                    self.scatter.points()[self.data['range'] - i - 1].setBrush(QtGui.QBrush(QColor(255, 0, 0, int(self.data['alpha'][self.data['range'] - i - 1] * 255))))
+                    self.scatter.points()[self.data['range'] - i - 1].setPen(QtGui.QPen(QColor(255, 0, 0, int(self.data['alpha'][self.data['range'] - i - 1] * 255))))
 
     def setTexts(self, text):
         for i in self.textItems:
@@ -194,7 +194,7 @@ class PlotDisplayItem():
             self.channelsRecorded = self.frequencyCounts[:, 0].tolist()
             self.channelsOriginal = []
 
-            if np.max(self.frequencyCounts) > 384:
+            if np.max(self.waveform_metrics['peak_channel']) > 384:
                 self.max_range = 768
             else:
                 self.max_range = 384
@@ -244,7 +244,7 @@ class PlotDisplayItem():
     def channelwise_median(self, metricsdf, metric, smooth_kernel=5):
         channelwise_median = []
         channelwise_count = []
-        for i in range(384):
+        for i in range(self.max_range):
             channeldata = metricsdf[metricsdf['peak_channel'].isin(np.arange(i-smooth_kernel, i+smooth_kernel+1))]
             if len(channeldata)<5:
                 channelwise_median.append(np.nan)
@@ -310,11 +310,11 @@ class PlotDisplayItem():
         self.alpha = df_counts
         
         #print(smoothed.shape)
-        for i in range(384):
+        for i in range(self.max_range):
             self.channelsOriginal.append([(df_metric[i] * 40) - shift_value, self.max_range - i - 1 + 256])
 
         self.adj = [[i, i + 1] for i in range(len(self.channelsOriginal) - 1)]
-        self.channelsPlot.setData(pos=np.array(self.channelsOriginal, dtype=float), adj=None, alpha=self.alpha)
+        self.channelsPlot.setData(pos=np.array(self.channelsOriginal, dtype=float), adj=None, alpha=self.alpha, range=self.max_range)
         x_coord = [[p[0] for p in self.channelsOriginal if not pd.isna(p[0])]]
         self.zeroMetric = [[np.min(x_coord), i] for i in range(1000)]
         self.zeroMetricChannelsPlot.setData(pos=np.array(self.zeroMetric, dtype=float))
@@ -345,7 +345,7 @@ class PlotDisplayItem():
         self.adj = [[i, i + 1] for i in range(len(self.channelsOriginal) - 1)]
 
         if hasattr(self, 'alpha'):
-            self.channelsPlot.setData(pos=np.array(self.channels, dtype=float), adj=None, alpha=self.alpha)
+            self.channelsPlot.setData(pos=np.array(self.channels, dtype=float), adj=None, alpha=self.alpha, range=self.max_range)
         else:
             self.channelsPlot.setData(pos=np.array(self.channels, dtype=float), adj=None)
 
@@ -390,7 +390,7 @@ class PlotDisplayItem():
                 #print(len(self.channels))
 
             if hasattr(self, 'alpha'):
-                self.channelsPlot.setData(pos=np.array(self.channels, dtype=float), adj=None, alpha=self.alpha)
+                self.channelsPlot.setData(pos=np.array(self.channels, dtype=float), adj=None, alpha=self.alpha, range=self.max_range)
             else:
                 self.channelsPlot.setData(pos=np.array(self.channels, dtype=float), adj=None)
 
@@ -464,7 +464,7 @@ class PlotDisplayItem():
             self.adj = [[i, i + 1] for i in range(len(self.channelsOriginal) - 1)]
 
             if hasattr(self, 'alpha'):
-                self.channelsPlot.setData(pos=np.array(self.channels, dtype=float), adj=None, alpha=self.alpha)
+                self.channelsPlot.setData(pos=np.array(self.channels, dtype=float), adj=None, alpha=self.alpha, range=self.max_range)
             else:
                 self.channelsPlot.setData(pos=np.array(self.channels, dtype=float), adj=None)
         else: # some alignment has been done already, so use existing coordinates
@@ -477,7 +477,7 @@ class PlotDisplayItem():
             self.adj = [[i, i + 1] for i in range(len(self.channelsOriginal) - 1)]
                 
             if hasattr(self, 'alpha'):
-                self.channelsPlot.setData(pos=np.array(self.channels, dtype=float), adj=None, alpha=self.alpha)
+                self.channelsPlot.setData(pos=np.array(self.channels, dtype=float), adj=None, alpha=self.alpha, range=self.max_range)
             else:
                 self.channelsPlot.setData(pos=np.array(self.channels, dtype=float), adj=None)
 
@@ -566,6 +566,7 @@ class VolumeAlignment(QWidget):
         self.ccfTextItems = []
         self.ccfPlotItems = []
         self.probeItems = []
+        self.surfaceChannelLineItems = []
         self.probeMaskItems = []
         self.anchorItems = []
         self.anchorPos = []
@@ -941,6 +942,9 @@ class VolumeAlignment(QWidget):
         if hasattr(self, 'plotImage') and self.prevProbe != self.probeDropDown.currentText():
             view.removeItem(self.plotImage)
 
+        for item in self.surfaceChannelLineItems:
+            view.removeItem(item)
+
         for item in self.plotImageItems:
             view.removeItem(item)
 
@@ -984,6 +988,7 @@ class VolumeAlignment(QWidget):
         self.ccfTextItems.clear()
         self.plotImageItems.clear()
         self.plotImageTextItems.clear()
+        self.surfaceChannelLineItems.clear()
         self.plotImageCCFItems.clear()
         self.ccfPlotItems.clear()
         self.anchorItems.clear()
@@ -1534,6 +1539,19 @@ class VolumeAlignment(QWidget):
                 popup = QMessageBox()
                 popup.setText('Couldn\'t find metrics.csv for {}'.format(probe))
                 popup.exec_()
+        
+
+        if hasattr(self.plots['unit_density'], 'max_range') and self.plots['unit_density'].max_range > 384:
+            for item in self.surfaceChannelLineItems:
+                view.removeItem(item)
+
+            self.surfaceChannelLineItems.clear()
+            plotItem = pg.ScatterPlotItem(pos=[[i, self.plots['unit_density'].ogChannelsShift[384][1]] for i in range(-1200, 
+                                                                                            int(self.plots['unit_density'].ogChannelsShift[384][0]))], 
+                                            pen=QtGui.QPen(QColor('red')), brush=QtGui.QBrush(QColor('red')), size=3)
+            view.addItem(plotItem)
+            self.surfaceChannelLineItems.append(plotItem)
+
 
     # helper function to remove the alignment line
     def removeLineHelper(self, y_coord, ind):
@@ -1546,7 +1564,8 @@ class VolumeAlignment(QWidget):
         self.plots['unit_density'].channelsPlot.setData(pos=np.array(self.plots['unit_density'].channels, dtype=float), adj=None)
 
         self.plots[self.metrics.currentText()].channelsPlot.setData(pos=np.array(self.plots[self.metrics.currentText()].channels, dtype=float), 
-                                                                            adj=None, alpha=self.plots[self.metrics.currentText()].alpha)
+                                                                            adj=None, alpha=self.plots[self.metrics.currentText()].alpha,
+                                                                            range=self.plots[self.metrics.currentText()].max_range)
         self.plots['unit_density'].linearSpacePoints(self.pointsAdded)
         self.plots[self.metrics.currentText()].linearSpacePoints(self.pointsAdded)
 
@@ -1624,7 +1643,7 @@ class VolumeAlignment(QWidget):
             if flag:
                 other_plot.channels = newPoints
             #if len(self.pointsAdded) == 1:
-            other_plot.channelsPlot.setData(pos=np.array(other_plot.channels, dtype=float), adj=None, alpha=other_plot.alpha)
+            other_plot.channelsPlot.setData(pos=np.array(other_plot.channels, dtype=float), adj=None, alpha=other_plot.alpha, range=other_plot.max_range)
 
         #other_plot.linearSpacePoints(pointsAdded)
 
@@ -2160,7 +2179,6 @@ class VolumeAlignment(QWidget):
                 view.removeItem(item)
 
         view.addItem(self.plotImage)
-
         if hasattr(self, 'plotImageItems'):
             for item in self.plotImageItems:
                 view.addItem(item)
@@ -2238,7 +2256,8 @@ class VolumeAlignment(QWidget):
             self.plots['unit_density'].channels = plot_items[0].copy()
             self.plots['unit_density'].channelsPlot.setData(pos=np.array(plot_items[0], dtype=float), adj=None)
             self.plots[self.metrics.currentText()].channelsPlot.setData(pos=np.array(plot_items[1], dtype=float), adj=None, 
-                                                                        alpha=self.plots[self.metrics.currentText()].alpha)
+                                                                        alpha=self.plots[self.metrics.currentText()].alpha,
+                                                                        range=self.plots[self.metrics.currentText()].max_range)
             self.plots[self.metrics.currentText()].channels = plot_items[1].copy()
 
 
@@ -2286,7 +2305,7 @@ class VolumeAlignment(QWidget):
             
             print('Length of points added, anchor points', len(self.pointsAdded), len(self.anchorPts))
         #view.addItem(self.textItem)
-        
+
 if __name__ == '__main__':
     # command line inputs - mouse id
     args = parser.parse_args()
