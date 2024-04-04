@@ -528,10 +528,10 @@ class TissuecyteApp10(QWidget):
                     # if len(matching_index) > 0:
                     #     self.annotations = self.annotations.drop(index=matching_index)
                 
-                    self.annotations = self.annotations.append(pd.DataFrame(data = {'AP' : [AP],
+                    self.annotations = pd.concat([self.annotations, pd.DataFrame(data = {'AP' : [AP],
                                         'ML' : [ML],
                                         'DV': [DV],
-                                        'probe_name': [self.selectedProbe]}),
+                                        'probe_name': [self.selectedProbe]})],
                                         ignore_index=True)
 
                     self.saveData()
