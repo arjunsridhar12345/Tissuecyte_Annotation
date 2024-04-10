@@ -1546,8 +1546,9 @@ class VolumeAlignment(QWidget):
                 view.removeItem(item)
 
             self.surfaceChannelLineItems.clear()
-            plotItem = pg.ScatterPlotItem(pos=[[i, self.plots['unit_density'].ogChannelsShift[384][1]] for i in range(-1200, 
-                                                                                            int(self.plots['unit_density'].ogChannelsShift[384][0]))], 
+            surface_index = int(len(self.plots['unit_density'].ogChannelsShift) / 2)
+            plotItem = pg.ScatterPlotItem(pos=[[i, self.plots['unit_density'].ogChannelsShift[surface_index][1]] for i in range(-1200, 
+                                                                                            int(self.plots['unit_density'].ogChannelsShift[surface_index][0]))], 
                                             pen=QtGui.QPen(QColor('red')), brush=QtGui.QBrush(QColor('red')), size=3)
             view.addItem(plotItem)
             self.surfaceChannelLineItems.append(plotItem)
@@ -2135,53 +2136,58 @@ class VolumeAlignment(QWidget):
         
         probe = self.probeDropDown.currentText()
         probe = probe[probe.index(' ')+1:]
-        with open(pathlib.Path(self.storageDirectory, 'image_plots', '{}_corr_{}.pickle'.format(probe, 
-                                                                                                self.correlationDropDown.currentText().lower()))
-                                                                                                , 'rb') as f:
-            data = pickle.load(f)
+        correlation_path = pathlib.Path(self.storageDirectory, 'image_plots', '{}_corr_{}.pickle'.format(probe, 
+                                                                                       self.correlationDropDown.currentText().lower()))
+        if correlation_path.exists(): 
+            with open(correlation_path, 'rb') as f:
+                data = pickle.load(f)
 
-        view = self.image.getView()
-        if hasattr(self, 'plotImage'):
-            view.removeItem(self.plotImage)
+            view = self.image.getView()
+            if hasattr(self, 'plotImage'):
+                view.removeItem(self.plotImage)
 
-        self.plotImage = pg.ImageItem()
-        #print(data)
-        rot = np.rot90(np.rot90(data['img']))
-        flip = np.flipud(rot)
-        #print(flip.shape)
+            self.plotImage = pg.ImageItem()
+            #print(data)
+            rot = np.rot90(np.rot90(data['img']))
+            flip = np.flipud(rot)
+            #print(flip.shape)
 
-        
-        self.plotImage.setImage(flip)
-        peak_channels = pd.read_csv(self.path)['peak_channel']
+            
+            self.plotImage.setImage(flip)
+            peak_channels = pd.read_csv(self.path)['peak_channel']
 
-        if peak_channels.max() > 383:
-            transform = [data['scale'][0], 0., 0., 0., data['scale'][1], 0., -1200.,
-                            self.plots['unit_density'].ogChannelsShift[-1][1], 1.]
+            if peak_channels.max() > 383:
+                transform = [data['scale'][0], 0., 0., 0., data['scale'][1], 0., -1200.,
+                                self.plots['unit_density'].ogChannelsShift[-1][1], 1.]
+            else:
+                transform = [data['scale'][0], 0., 0., 0., data['scale'][1], 0., -700.,
+                    self.plots['unit_density'].ogChannelsShift[-1][1], 1.]
+
+            self.plotImage.setTransform(QtGui.QTransform(*transform))
+            cmap = data.get('cmap', [])
+            
+            if cmap:
+                color_bar = cb.ColorBar(data['cmap'])
+                lut = color_bar.getColourMap()
+                self.plotImage.setLookupTable(lut)
+                self.plotImage.setLevels((data['levels'][0], data['levels'][1]))
+                #cbar = color_bar.makeColourBar(20, 5, self.fig_img_cb, min=data['levels'][0],
+                                                #max=data['levels'][1], label=data['title'])
+            else:
+                self.plotImage.setLevels((1, 0))
+
+            if hasattr(self, 'plotImageItems'):
+                for item in self.plotImageItems:
+                    view.removeItem(item)
+
+            view.addItem(self.plotImage)
+            if hasattr(self, 'plotImageItems'):
+                for item in self.plotImageItems:
+                    view.addItem(item)
         else:
-            transform = [data['scale'][0], 0., 0., 0., data['scale'][1], 0., -700.,
-                self.plots['unit_density'].ogChannelsShift[-1][1], 1.]
-
-        self.plotImage.setTransform(QtGui.QTransform(*transform))
-        cmap = data.get('cmap', [])
-        
-        if cmap:
-            color_bar = cb.ColorBar(data['cmap'])
-            lut = color_bar.getColourMap()
-            self.plotImage.setLookupTable(lut)
-            self.plotImage.setLevels((data['levels'][0], data['levels'][1]))
-            #cbar = color_bar.makeColourBar(20, 5, self.fig_img_cb, min=data['levels'][0],
-                                               #max=data['levels'][1], label=data['title'])
-        else:
-            self.plotImage.setLevels((1, 0))
-
-        if hasattr(self, 'plotImageItems'):
-            for item in self.plotImageItems:
-                view.removeItem(item)
-
-        view.addItem(self.plotImage)
-        if hasattr(self, 'plotImageItems'):
-            for item in self.plotImageItems:
-                view.addItem(item)
+            popup = QMessageBox()
+            popup.setText(f'No info for probe {self.probeDropDown.currentText()}. Probe likely skipped by sorting')
+            popup.exec_()
 
     # displays the region along the probe track
     # probe: string, the probe to be displayed from the drop down
