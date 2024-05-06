@@ -7,6 +7,12 @@ import matplotlib.pyplot as plt
 from typing import Any
 from scipy.spatial.distance import cdist
 from clean_structure_acronym import clean_channel_annotations
+import argparse
+
+parser = argparse.ArgumentParser()
+#parser.add_argument('-i', '--inputResampledImages', help='Directory to resampeld images', required=True)
+#parser.add_argument('-a', '--annotationFileLocation', help='Path for annotation csv file to be saved in this location', required=True)
+parser.add_argument('--mouseID', help='Mouse ID of session')
 
 TISSUECYTE_PATH = pathlib.Path('//allen/programs/mindscope/workgroups/np-behavior/tissuecyte')
 
@@ -135,5 +141,7 @@ if __name__ == '__main__':
         process_white_matter_channels(mouse_id)
     """
     #test_assignment()
-    process_white_matter_channels('644867')
+    args = parser.parse_args()
+    mouse_id = args.mouseID
+    process_white_matter_channels(mouse_id)
     
