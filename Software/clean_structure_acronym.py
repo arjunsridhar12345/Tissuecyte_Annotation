@@ -77,15 +77,21 @@ def clean_channel_annotations(mouse_id, channel_path, df_channels: pd.DataFrame)
         if pd.isna(row.region) or row.region == 'out of brain':
             label = get_structure_acronym((row.AP, row.DV, row.ML))
             df_channels.loc[index, 'region'] = label
+        
+        if pd.isna(row.postprocessed_region) or row.postprocessed_region == 'out of brain':
+            label = get_structure_acronym((row.AP, row.DV, row.ML))
+            df_channels.loc[index, 'postprocessed_region'] = label
     
-    df_channels['region_stripped'] = strip_subregions_list(df_channels['region'].tolist())
+    df_channels['region_stripped'] = strip_subregions_list(df_channels['postprocessed_region'].tolist())
+    df_channels['raw_location'] = df_channels['region']
+    df_channels['raw_structure'] = strip_subregions_list(df_channels['raw_location'].tolist())
 
     output_path = pathlib.Path('//allen/programs/mindscope/workgroups/dynamicrouting/arjun')
     output_dir = output_path / mouse_id
     if not output_dir.exists():
         output_dir.mkdir()
     
-    file_name = channel_path.stem + '_processed.csv'
+    file_name = channel_path.stem + '_processed_new_sorting.csv'
     df_channels.to_csv(output_dir / file_name, index=False)
     
 if __name__ == '__main__':
