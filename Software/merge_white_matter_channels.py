@@ -8,6 +8,7 @@ from typing import Any
 from scipy.spatial.distance import cdist
 from clean_structure_acronym import clean_channel_annotations
 import argparse
+import warnings
 
 parser = argparse.ArgumentParser()
 #parser.add_argument('-i', '--inputResampledImages', help='Directory to resampeld images', required=True)
@@ -107,10 +108,10 @@ def process_white_matter_channels(mouse_id: str) -> None:
         channel_file_path = tuple(channel_file_path for channel_file_path in channel_file_paths if probe_day in str(channel_file_path))
 
         if not channel_file_path:
-            raise FileNotFoundError(f'No channels csv for subject {mouse_id} and probe day {probe_day}')
+            warnings.warn(f'No channels csv for subject {mouse_id} and probe day {probe_day}', stacklevel=2)
 
         if len(channel_anchors) == 0:
-            continue
+            warnings.warn(f'No anchors aligned for subject {mouse_id} and probe day {probe_day}', stacklevel=2)
         
         df_channels = pd.read_csv(channel_file_path[0])
 
