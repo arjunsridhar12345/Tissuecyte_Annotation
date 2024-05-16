@@ -63,7 +63,7 @@ def insertion_holes_from_db_metadata(df_sessions_metadata: pd.DataFrame) -> dict
     
     for index, row in df_sessions_metadata.iterrows():
         if row['implant'] not in IMPLANTS:
-            raise ValueError(f"Implant {row['implant']} different from 2002 or 2005")
+            raise ValueError(f"Implant {row['implant']} different from 2002 or 2005 or 2006")
         
         for probe in PROBES:
             probe_day = probe+str(row['day'])
