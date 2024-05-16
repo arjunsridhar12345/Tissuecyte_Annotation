@@ -29,6 +29,7 @@ PROBES = ['A', 'B', 'C', 'D', 'E', 'F']
 SURFACE_IMAGE_PATH = pathlib.Path('//allen/programs/mindscope/workgroups/dynamicrouting/cabasco/composite_surface_images')
 ##in bregma (anything in mm will do)
 
+IMPLANTS = ('2002', '2005', '2006')
 
 ##only works if mouse has probe_insertions jsons
 def insertion_holes_from_json(mouse, probes):
@@ -61,7 +62,7 @@ def insertion_holes_from_db_metadata(df_sessions_metadata: pd.DataFrame) -> dict
     insertions:dict = {}
     
     for index, row in df_sessions_metadata.iterrows():
-        if row['implant'] != '2002' and row['implant'] != '2005':
+        if row['implant'] not in IMPLANTS:
             raise ValueError(f"Implant {row['implant']} different from 2002 or 2005")
         
         for probe in PROBES:
