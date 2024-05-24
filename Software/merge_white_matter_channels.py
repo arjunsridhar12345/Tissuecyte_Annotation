@@ -109,9 +109,11 @@ def process_white_matter_channels(mouse_id: str) -> None:
 
         if not channel_file_path:
             warnings.warn(f'No channels csv for subject {mouse_id} and probe day {probe_day}', stacklevel=2)
+            continue
 
         if len(channel_anchors) == 0:
             warnings.warn(f'No anchors aligned for subject {mouse_id} and probe day {probe_day}', stacklevel=2)
+            continue
         
         df_channels = pd.read_csv(channel_file_path[0])
 
