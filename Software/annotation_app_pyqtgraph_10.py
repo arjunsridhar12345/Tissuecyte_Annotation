@@ -891,6 +891,8 @@ if __name__ == '__main__':
     #output_dir_csv = pathlib.Path(args.annotationFileLocation)
     mouse_id = args.mouseID
     num_insertion_days = args.numInsertionDays
+    if num_insertion_days > 10:
+        raise ValueError(f'Too many insertion days specificed. Protocol has 10 days but number specified was {num_insertion_days}')
     app = QApplication(sys.argv)
     w = TissuecyteApp10(mouse_id, num_insertion_days)
     w.show()
