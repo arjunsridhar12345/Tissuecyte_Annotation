@@ -37,10 +37,10 @@ Running this process can take some time (around 20-30 mins usually). The output 
 `/allen/programs/mindscope/workgroups/np-behavior/tissuecyte/mouseID`
 
 ### Running the Annotation App
-To use the annotation app, run the following command
+To use the annotation app, run the following command. `--numInsertionDays` is optional and the default is 4.
 
 ```
-python annotation_app_pyqtgraph_10.py --mouseID <mouseID>
+python annotation_app_pyqtgraph_10.py --mouseID <mouseID> --numInsertionDays <numInsertionDays>
 ```
 
 The app may take several mintues to load, and once it has loaded, the following screen should be displayed

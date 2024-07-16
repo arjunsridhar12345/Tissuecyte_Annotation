@@ -25,6 +25,7 @@ from glob import glob
 import pandas as pd
 import argparse
 import pathlib
+from matplotlib import colors
 from warp_image import warp_points, warp_execute
 from annotation_app_pyqtgraph_temp import TissuecyteAppTemp
 from get_tissuecyte_info import get_tc_info
@@ -40,10 +41,11 @@ parser = argparse.ArgumentParser()
 #parser.add_argument('-i', '--inputResampledImages', help='Directory to resampeld images', required=True)
 #parser.add_argument('-a', '--annotationFileLocation', help='Path for annotation csv file to be saved in this location', required=True)
 parser.add_argument('--mouseID', help='Mouse ID of session')
+parser.add_argument('--numInsertionDays', help='Number of insertion days', default=4)
 
 class TissuecyteApp10(QWidget):
     # initialize fields
-    def __init__(self, mouse_id):
+    def __init__(self, mouse_id, num_insertion_days=4):
         super().__init__()
         self.title = 'Tissuecyte Annotation'
         self.left = 500
@@ -54,8 +56,10 @@ class TissuecyteApp10(QWidget):
         self.height = int(320*SCALING_FACTOR)
 
         self.mouseID = mouse_id
+        self.numInsertionDays = num_insertion_days
         self.dir = '//allen/programs/mindscope/workgroups/np-behavior/tissuecyte'
         self.workingDirectory = pathlib.Path('{}/{}'.format(self.dir, self.mouseID))
+        print(f'Number of insertion days: {self.numInsertionDays}\n')
         print('Fetching Data')
         self.model_directory = pathlib.Path('{}/field_reference'.format(self.dir))
 
@@ -92,22 +96,6 @@ class TissuecyteApp10(QWidget):
         self.image.setImage(im8.transpose())
 
         """
-        self.colors = {'A1': 'red', 'A2': 'dark red', 'A3': 'indian red', 'A4': 'orange red', 'A5': 'pale violet red',
-                       'B1': 'blue', 'B2': 'dark blue', 'B3': 'deep sky blue', 'B4': 'dodger blue', 'B5': 'steel blue',
-                       'C1': 'pink', 'C2': 'deep pink', 'C3': 'hot pink', 'C4': 'magenta', 'C5': 'dark magenta',
-                       'D1': 'yellow', 'D2': 'light yellow', 'D3': 'gold', 'D4': 'goldenrod', 'D5': 'yellow green',
-                       'E1': 'cyan', 'E2': 'dark cyan', 'E3': 'light cyan', 'E4': 'turquoise', 'E5': 'teal',
-                       'F1': 'green', 'F2': 'dark green', 'F3': 'light green', 'F4': 'lawn green', 'F5': 'dark sea green'}
-
-        
-        self.rgb = {'A1': '(255, 0, 0)', 'A2': '(139, 0, 0)', 'A3': '(205, 92, 92)', 'A4': '(255, 69, 0)', 'A5': '(219, 112, 147)',
-                    'B1': '(0, 0, 255)', 'B2': '(0, 0, 139)', 'B3': '( 0, 191, 255)', 'B4': '(30, 144, 255)', 'B5': '( 70, 130, 180)',
-                    'C1': '(255, 192, 203)', 'C2': '(255, 20, 147)', 'C3': '(255, 105, 180)', 'C4': '(255, 0, 255)', 'C5': '(139, 0, 139)',
-                    'D1': '(255, 255, 0)', 'D2': '(255, 255, 224)', 'D3': '(255, 215, 0)', 'D4': '(218, 165, 32)', 'D5': '(154, 205, 50)',
-                    'E1': '( 0, 255, 255)', 'E2': '( 0, 139, 139)', 'E3': '(224, 255, 255)', 'E4': '(64, 224, 208)', 'E5': '(0, 128, 128)',
-                    'F1': '( 0, 128, 0)', 'F2': '(0, 100, 0)', 'F3': '(144, 238, 144)', 'F4': '(124, 252, 0)', 'F5': '(143, 188, 143)'}
-
-        """
         self.colors = {'A1': 'mistyrose', 'A2': 'red', 'A3': 'light coral', 'A4': 'dark red',
                        'B1': 'light blue', 'B2': 'blue', 'B3': 'steel blue', 'B4': 'dark blue',
                        'C1': 'pink', 'C2': 'magenta', 'C3': 'orchid', 'C4': 'deep pink',
@@ -121,6 +109,33 @@ class TissuecyteApp10(QWidget):
                     'D1': '(210, 180, 140)', 'D2': '(255, 128, 0)', 'D3': '(255, 215, 0)', 'D4': '(218, 165, 32)',
                     'E1': '( 0, 255, 255)', 'E2': '(95, 158, 160)', 'E3': '(127, 255, 212)', 'E4': '(72, 209, 204)',
                     'F1': '(144, 238, 144)', 'F2': '(0, 128, 0)', 'F3': '(128, 128, 0)', 'F4': '(107, 142, 35)'}
+        """
+        self.colors = {
+            'A1': 'brown', 'A2': 'dark red', 'A3': 'indian red', 'A4': 'coral', 'A5': 'red',
+            'A6': 'dark salmon', 'A7': 'tomato', 'A8': 'salmon', 'A9': 'light coral', 'A10': 'misty rose',
+
+            'B1': 'dark blue', 'B2': 'dark slate blue', 'B3': 'medium slate blue', 'B4': 'medium blue', 'B5': 'blue',
+            'B6': 'slate blue', 'B7': 'dodger blue', 'B8': 'light sky blue', 'B9': 'light blue', 'B10': 'alice blue',
+
+            'C1': 'purple', 'C2': 'dark magenta', 'C3': 'medium violet red', 'C4': 'deep pink', 'C5': 'hot pink',
+            'C6': 'magenta', 'C7': 'crimson', 'C8': 'orchid', 'C9': 'pink', 'C10': 'light pink',
+
+            'D1': 'dark goldenrod', 'D2': 'goldenrod', 'D3': 'tan', 'D4': 'dark orange', 'D5': 'orange',
+            'D6': 'gold', 'D7': 'pale goldenrod', 'D8': 'beige', 'D9': 'light goldenrod yellow', 'D10': 'light yellow',
+
+            'E1': 'dark slate grey', 'E2': 'dark cyan', 'E3': 'teal', 'E4': 'dark turquoise', 'E5': 'medium turquoise',
+            'E6': 'turquoise', 'E7': 'pale turquoise', 'E8': 'cyan', 'E9': 'light cyan', 'E10': 'azure',
+
+            'F1': 'dark green', 'F2': 'dark olive green', 'F3': 'forest green', 'F4': 'green', 'F5': 'sea green',
+            'F6': 'medium sea green', 'F7': 'lime', 'F8': 'spring green', 'F9': 'pale green', 'F10': 'light green'
+        }
+
+        self.rgb = {}
+        for probe_day in self.colors:
+            rgb = colors.to_rgb(self.colors[probe_day].replace(' ', ''))
+            self.rgb[probe_day] = f'({rgb[0] * 255}, {rgb[1] * 255}, {rgb[2] * 255})'
+        
+        assert len(self.colors) == len(self.rgb)
 
         self.mainLayout.addWidget(self.image)
         # add mouse click event
@@ -156,10 +171,9 @@ class TissuecyteApp10(QWidget):
         self.probeNumber = QComboBox()
         self.probeNumber.setFocusPolicy(QtCore.Qt.NoFocus)
         self.probeNumber.addItem('Number')
-        self.probeNumber.addItem('1')
-        self.probeNumber.addItem('2')
-        self.probeNumber.addItem('3')
-        self.probeNumber.addItem('4')
+        for i in range(1, int(self.numInsertionDays) + 1):
+            self.probeNumber.addItem(str(i))
+
         self.probeNumber.currentTextChanged.connect(self.trialChange)
         self.probeLayout.addWidget(self.probeNumber, 0, 1)
         self.trial = 'Number'
@@ -876,8 +890,8 @@ if __name__ == '__main__':
     #input_resampled = pathlib.Path(args.inputResampledImages)
     #output_dir_csv = pathlib.Path(args.annotationFileLocation)
     mouse_id = args.mouseID
-
+    num_insertion_days = args.numInsertionDays
     app = QApplication(sys.argv)
-    w = TissuecyteApp10(mouse_id)
+    w = TissuecyteApp10(mouse_id, num_insertion_days)
     w.show()
     sys.exit(app.exec_())
