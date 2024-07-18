@@ -31,6 +31,7 @@ import paramiko
 import annotation_qc_utils as utils
 import sqlite3
 from sqlalchemy import create_engine
+from matplotlib import colors
 
 #class pandasModel(QAbstractTableModel):
 
@@ -77,12 +78,32 @@ class AnnotationProbesViewer(QWidget):
             self.annotations = pd.read_csv(os.path.join(self.workingDirectory, 'probe_annotations_{}.csv'.format(self.mouseID)))
         self.updatedAnnotations = self.annotations.copy(deep=True)
 
-        self.rgb = {'A1': '(255, 228, 225)', 'A2': '(255, 0, 0)', 'A3': '(240, 128, 128)', 'A4': '(139, 0, 0)',
-                    'B1': '(173, 216, 230)', 'B2': '(0, 0, 255)', 'B3': '(70, 130, 180)', 'B4': '(0, 0, 139)',
-                    'C1': '(255, 192, 203)', 'C2': '(255, 0, 255)', 'C3': '(218, 112, 214)', 'C4': '(255, 20, 147)',
-                    'D1': '(210, 180, 140)', 'D2': '(255, 128, 0)', 'D3': '(255, 215, 0)', 'D4': '(218, 165, 32)',
-                    'E1': '( 0, 255, 255)', 'E2': '(95, 158, 160)', 'E3': '(127, 255, 212)', 'E4': '(72, 209, 204)',
-                    'F1': '(144, 238, 144)', 'F2': '(0, 128, 0)', 'F3': '(128, 128, 0)', 'F4': '(107, 142, 35)'}
+        self.colors = {
+            'A1': 'brown', 'A2': 'dark red', 'A3': 'indian red', 'A4': 'coral', 'A5': 'red',
+            'A6': 'dark salmon', 'A7': 'tomato', 'A8': 'salmon', 'A9': 'light coral', 'A10': 'misty rose',
+
+            'B1': 'dark blue', 'B2': 'dark slate blue', 'B3': 'medium slate blue', 'B4': 'medium blue', 'B5': 'blue',
+            'B6': 'slate blue', 'B7': 'dodger blue', 'B8': 'light sky blue', 'B9': 'light blue', 'B10': 'alice blue',
+
+            'C1': 'purple', 'C2': 'dark magenta', 'C3': 'medium violet red', 'C4': 'deep pink', 'C5': 'hot pink',
+            'C6': 'magenta', 'C7': 'crimson', 'C8': 'orchid', 'C9': 'pink', 'C10': 'light pink',
+
+            'D1': 'dark goldenrod', 'D2': 'goldenrod', 'D3': 'tan', 'D4': 'dark orange', 'D5': 'orange',
+            'D6': 'gold', 'D7': 'pale goldenrod', 'D8': 'beige', 'D9': 'light goldenrod yellow', 'D10': 'light yellow',
+
+            'E1': 'dark slate grey', 'E2': 'dark cyan', 'E3': 'teal', 'E4': 'dark turquoise', 'E5': 'medium turquoise',
+            'E6': 'turquoise', 'E7': 'pale turquoise', 'E8': 'cyan', 'E9': 'light cyan', 'E10': 'azure',
+
+            'F1': 'dark green', 'F2': 'dark olive green', 'F3': 'forest green', 'F4': 'green', 'F5': 'sea green',
+            'F6': 'medium sea green', 'F7': 'lime', 'F8': 'spring green', 'F9': 'pale green', 'F10': 'light green'
+        }
+
+        self.rgb = {}
+        for probe_day in self.colors:
+            rgb = colors.to_rgb(self.colors[probe_day].replace(' ', ''))
+            self.rgb[probe_day] = f'({rgb[0] * 255}, {rgb[1] * 255}, {rgb[2] * 255})'
+        
+        assert len(self.colors) == len(self.rgb)
 
         self.probe_lines = {}
         self.main_frame = QWidget()
