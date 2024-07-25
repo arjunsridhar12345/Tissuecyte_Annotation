@@ -31,12 +31,14 @@ import paramiko
 import annotation_qc_utils as utils
 import sqlite3
 from sqlalchemy import create_engine
+from matplotlib import colors
 
 #class pandasModel(QAbstractTableModel):
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--mouseID', help='Mouse ID of session', required=True)
 parser.add_argument('--implant', help='Implant used', required=True)
+parser.add_argument('--numInsertionDays', help='Number of insertion days', default=4)
 parser.add_argument('--user', help='Username for hpc', required=True)
 parser.add_argument('--password', help='Password for hpc', required=True)
 
@@ -54,10 +56,11 @@ ENGINE = create_engine(DB, echo=False)
 
 class AnnotationProbesViewer(QWidget):
     # initialize fields
-    def __init__(self, mouse_id: str, implant: str='2002'):
+    def __init__(self, mouse_id: str, implant: str='2002', num_insertion_days:int=4):
         super().__init__()
         # directory and csv fields
         self.mouseID = mouse_id
+        self.numInsertionDays = num_insertion_days
         self.implant = implant
         
         self.dir = '//allen/programs/mindscope/workgroups/np-behavior/tissuecyte'
@@ -77,12 +80,32 @@ class AnnotationProbesViewer(QWidget):
             self.annotations = pd.read_csv(os.path.join(self.workingDirectory, 'probe_annotations_{}.csv'.format(self.mouseID)))
         self.updatedAnnotations = self.annotations.copy(deep=True)
 
-        self.rgb = {'A1': '(255, 228, 225)', 'A2': '(255, 0, 0)', 'A3': '(240, 128, 128)', 'A4': '(139, 0, 0)',
-                    'B1': '(173, 216, 230)', 'B2': '(0, 0, 255)', 'B3': '(70, 130, 180)', 'B4': '(0, 0, 139)',
-                    'C1': '(255, 192, 203)', 'C2': '(255, 0, 255)', 'C3': '(218, 112, 214)', 'C4': '(255, 20, 147)',
-                    'D1': '(210, 180, 140)', 'D2': '(255, 128, 0)', 'D3': '(255, 215, 0)', 'D4': '(218, 165, 32)',
-                    'E1': '( 0, 255, 255)', 'E2': '(95, 158, 160)', 'E3': '(127, 255, 212)', 'E4': '(72, 209, 204)',
-                    'F1': '(144, 238, 144)', 'F2': '(0, 128, 0)', 'F3': '(128, 128, 0)', 'F4': '(107, 142, 35)'}
+        self.colors = {
+            'A1': 'brown', 'A2': 'dark red', 'A3': 'indian red', 'A4': 'coral', 'A5': 'red',
+            'A6': 'dark salmon', 'A7': 'tomato', 'A8': 'salmon', 'A9': 'light coral', 'A10': 'misty rose',
+
+            'B1': 'dark blue', 'B2': 'dark slate blue', 'B3': 'medium slate blue', 'B4': 'medium blue', 'B5': 'blue',
+            'B6': 'slate blue', 'B7': 'dodger blue', 'B8': 'light sky blue', 'B9': 'light blue', 'B10': 'alice blue',
+
+            'C1': 'purple', 'C2': 'dark magenta', 'C3': 'medium violet red', 'C4': 'deep pink', 'C5': 'hot pink',
+            'C6': 'magenta', 'C7': 'crimson', 'C8': 'orchid', 'C9': 'pink', 'C10': 'light pink',
+
+            'D1': 'dark goldenrod', 'D2': 'goldenrod', 'D3': 'tan', 'D4': 'dark orange', 'D5': 'orange',
+            'D6': 'gold', 'D7': 'pale goldenrod', 'D8': 'beige', 'D9': 'light goldenrod yellow', 'D10': 'light yellow',
+
+            'E1': 'dark slate grey', 'E2': 'dark cyan', 'E3': 'teal', 'E4': 'dark turquoise', 'E5': 'medium turquoise',
+            'E6': 'turquoise', 'E7': 'pale turquoise', 'E8': 'cyan', 'E9': 'light cyan', 'E10': 'azure',
+
+            'F1': 'dark green', 'F2': 'dark olive green', 'F3': 'forest green', 'F4': 'green', 'F5': 'sea green',
+            'F6': 'medium sea green', 'F7': 'lime', 'F8': 'spring green', 'F9': 'pale green', 'F10': 'light green'
+        }
+
+        self.rgb = {}
+        for probe_day in self.colors:
+            rgb = colors.to_rgb(self.colors[probe_day].replace(' ', ''))
+            self.rgb[probe_day] = f'({rgb[0] * 255}, {rgb[1] * 255}, {rgb[2] * 255})'
+        
+        assert len(self.colors) == len(self.rgb)
 
         self.probe_lines = {}
         self.main_frame = QWidget()
@@ -120,11 +143,9 @@ class AnnotationProbesViewer(QWidget):
 
         self.trialOld = QComboBox()
         self.trialOld.addItem('Current Number')
-        self.trialOld.addItem('1')
-        self.trialOld.addItem('2')
-        self.trialOld.addItem('3')
-        self.trialOld.addItem('4')
-        self.trialOld.addItem('5')
+        for i in range(1, self.numInsertionDays + 1):
+            self.trialOld.addItem(str(i))
+
         self.labelOld.addWidget(self.trialOld)
         
         # display for new probe and number drop down
@@ -140,10 +161,9 @@ class AnnotationProbesViewer(QWidget):
 
         self.trialNew = QComboBox()
         self.trialNew.addItem('New Number')
-        self.trialNew.addItem('1')
-        self.trialNew.addItem('2')
-        self.trialNew.addItem('3')
-        self.trialNew.addItem('4')
+        for i in range(1, self.numInsertionDays + 1):
+            self.trialNew.addItem(str(i))
+
         self.labelNew.addWidget(self.trialNew)
 
         self.switchButton = QPushButton('Switch Probes')
@@ -231,12 +251,12 @@ class AnnotationProbesViewer(QWidget):
         df_sessions_metadata = df_sessions_metadata[df_sessions_metadata['MID'] == int(self.mouseID)]
         insertions = utils.insertion_holes_from_db_metadata(df_sessions_metadata)
 
-        surface_coords = utils.get_surface_coords(self.annotations)
-        ann_vectors = utils.get_annotation_vectors(surface_coords)
-        implant_vectors = utils.get_implant_vectors(insertions, implant=self.implant)
+        surface_coords = utils.get_surface_coords(self.annotations, num_insertion_days=self.numInsertionDays)
+        ann_vectors = utils.get_annotation_vectors(surface_coords, num_insertions=self.numInsertionDays)
+        implant_vectors = utils.get_implant_vectors(insertions, implant=self.implant, num_insertion_days=self.numInsertionDays)
 
         probe = self.vectorProbeDropDown.currentText()
-        utils.plot_vectors_arjun(ann_vectors, implant_vectors, surface_coords, probe, self.mouseID)
+        utils.plot_vectors_arjun(ann_vectors, implant_vectors, surface_coords, probe, self.mouseID, num_insertions=self.numInsertionDays)
 
     # generate the image slice, mask, and overlay for the probe
     def generateImages(self):
@@ -472,13 +492,6 @@ class AnnotationProbesViewer(QWidget):
     def update_plot_2d(self, probe_annotations):
         self.axes.clear()
 
-        self.colors = {'A1': 'mistyrose', 'A2': 'red', 'A3': 'light coral', 'A4': 'dark red',
-                       'B1': 'light blue', 'B2': 'blue', 'B3': 'steel blue', 'B4': 'dark blue',
-                       'C1': 'pink', 'C2': 'magenta', 'C3': 'orchid', 'C4': 'deep pink',
-                       'D1': 'tan', 'D2': 'orange', 'D3': 'gold', 'D4': 'goldenrod',
-                       'E1': 'cyan', 'E2': 'cadet blue', 'E3': 'aquamarine', 'E4': 'medium turquoise',
-                       'F1': 'light green', 'F2': 'green', 'F3': 'olive', 'F4': 'olive drab'}
-
 
         probes = probe_annotations['probe_name'].unique()
         #self.axes.contourf(self.reference[:, 0], self.reference[:, 1], self.image[:, 2])
@@ -615,11 +628,12 @@ if __name__ == '__main__':
     user = args.user
     psswd = args.password
     implant = args.implant
+    num_insertion_days = int(args.numInsertionDays)
 
     backend = 'pyqt5'
     app = vis.use(backend)
 
     app.Create()
-    m = AnnotationProbesViewer(mouse_id, implant=implant)
+    m = AnnotationProbesViewer(mouse_id, implant=implant, num_insertion_days=num_insertion_days)
     app.Run()
     

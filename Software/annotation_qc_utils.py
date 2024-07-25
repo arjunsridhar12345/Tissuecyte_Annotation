@@ -72,9 +72,9 @@ def insertion_holes_from_db_metadata(df_sessions_metadata: pd.DataFrame) -> dict
     return insertions
 
 ##returns 'probeDay - probeDay' : [x, y] for each probe's implant hole across days
-def get_implant_vectors(insertions:dict, implant='2002') -> dict:
+def get_implant_vectors(insertions:dict, implant='2002', num_insertion_days:int=4) -> dict:
     for probe in PROBES:
-        for i in range(4):
+        for i in range(num_insertion_days):
             if probe+str(i+1) not in insertions:
                 insertions[probe+str(i)] = 'default'
 
@@ -126,13 +126,13 @@ def generate_line(probe_annotations_day:pd.DataFrame) -> np.ndarray:
     
     return linepts
 
-def get_surface_coords(probe_annotations: pd.DataFrame) -> dict:
+def get_surface_coords(probe_annotations: pd.DataFrame, num_insertion_days:int=4) -> dict:
     probes_annotated = probe_annotations['probe_name'].unique()
     probes = ['A', 'B', 'C', 'D', 'E', 'F']
     surface_channel_coords: dict = {}
 
     for probe in probes:
-        for i in range(1, NUM_DAYS+1):
+        for i in range(1, num_insertion_days+1):
             probe_day_key = f'Probe {probe+str(i)}'
             probe_day=probe+str(i)
             if probe_day_key in probes_annotated:
@@ -146,14 +146,14 @@ def get_surface_coords(probe_annotations: pd.DataFrame) -> dict:
     return surface_channel_coords
 
 ##returns 'probeDay - probeDay' : [x, y] vectors for each probe's annotation across days
-def get_annotation_vectors(coords:dict) -> dict:
+def get_annotation_vectors(coords:dict, num_insertions:int=4) -> dict:
     ann_vectors:dict = {}
     for probe in PROBES:
         probedict:dict = {}
         for k, v in coords.items():
             if probe in k:
                 probedict[k] = v
-        for i in range(4):
+        for i in range(num_insertions):
             for k,v in probedict.items():
                 if probe + str(i+1) in probedict:
                     ann_vectors[probe + str(i+1) + '-' + k] = (v[0] - probedict[probe + str(i+1)][0], v[1])
@@ -161,18 +161,18 @@ def get_annotation_vectors(coords:dict) -> dict:
                     ann_vectors[probe + str(i+1) + '-' + k] = (np.array([-1, -1]), v[1])
     return ann_vectors
 
-def plot_vectors_arjun(annotation_vectors, implant_vectors, surface_coords, probe: str, mouse_id:str):
+def plot_vectors_arjun(annotation_vectors, implant_vectors, surface_coords, probe: str, mouse_id:str, num_insertions:int=4):
     img_path = next(SURFACE_IMAGE_PATH.glob(f'{mouse_id}*.png'))
     img = np.array(Image.open(img_path))
     plt.imshow(img)
     #for probe in PROBES:
-    vector_probes = np.array([vector for vector in list(annotation_vectors.keys()) if probe in vector]).reshape((4, 4))
+    vector_probes = np.array([vector for vector in list(annotation_vectors.keys()) if probe in vector]).reshape((num_insertions, num_insertions))
 
     x_vectors = [annotation_vectors[vector][0][0] for vector in annotation_vectors.keys()]
     y_vectors = [annotation_vectors[vector][0][1] for vector in annotation_vectors.keys()]
 
     fig = plt.figure(figsize=(8,8))
-    gs = fig.add_gridspec(ncols = 4, nrows = 4)
+    gs = fig.add_gridspec(ncols = num_insertions, nrows = num_insertions)
 
     for row in range(vector_probes.shape[0]):
         for column in range(vector_probes.shape[1]):
