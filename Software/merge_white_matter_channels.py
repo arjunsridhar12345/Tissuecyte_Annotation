@@ -13,7 +13,7 @@ import warnings
 parser = argparse.ArgumentParser()
 #parser.add_argument('-i', '--inputResampledImages', help='Directory to resampeld images', required=True)
 #parser.add_argument('-a', '--annotationFileLocation', help='Path for annotation csv file to be saved in this location', required=True)
-parser.add_argument('--mouseID', help='Mouse ID of session')
+parser.add_argument('--mouseID', help='Mouse ID of session', required=False)
 
 TISSUECYTE_PATH = pathlib.Path('//allen/programs/mindscope/workgroups/np-behavior/tissuecyte')
 
@@ -123,7 +123,7 @@ def process_white_matter_channels(mouse_id: str) -> None:
         
 def test_assignment() -> None:
     df_channels = pd.read_csv(r"\\allen\programs\mindscope\workgroups\np-behavior\tissuecyte\366122\Probe_A1_channels_366122_warped.csv")
-    channel_anchors = [235, 232, 224]
+    channel_anchors = [236, 232, 224]
     execute_white_matter_assignment(df_channels, channel_anchors)
     plot_postprocessed_regions(df_channels, channel_anchors)
     print()
@@ -137,14 +137,11 @@ def run_tests() -> None:
 
 if __name__ == '__main__':
     #run_tests()
-    """
+    
+    
     for mouse_id in ['620263', '620264', '626791', '628801', '636397', '644547', '646318', '636766', '644864', '644866',
                      '649943', '644867', '649944', '662983', '668759', '670181', '670180', '670248', '660023', '666986',
-                     '668755', '667252', '674562', '681532', '686740', '664851', '690706', '686176', '676909']:
-        process_white_matter_channels(mouse_id)
-    """
-    #test_assignment()
-    args = parser.parse_args()
-    mouse_id = args.mouseID
-    process_white_matter_channels(mouse_id)
+                     '668755', '667252', '674562', '681532', '686740', '664851', '690706', '686176', '676909', '702131', 
+                     '702136', '703333', '699847', '703880', '706401', '703882', '708016', '712815', '726088', '714748', '714753']:
     
+        process_white_matter_channels(mouse_id)

@@ -13,6 +13,9 @@ ANNOTATION_VOLUME = sitk.GetArrayFromImage(sitk.ReadImage(pathlib.Path(r"\\allen
 
 ANNOTATION_PATH = pathlib.Path('//allen/programs/mindscope/workgroups/np-behavior/tissuecyte')
 
+DV_UPPER_BOUND_POSITION = 20
+STRUCTURE_ID_NOT_IN_VOLUME = 0
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--mouseID', help='Mouse ID of session')
 
@@ -64,20 +67,27 @@ def get_structure_acronym(point:tuple[int, int, int]) -> str:
         index = structure_ids.index(structure_id)
         label = labels[index]
     else:
-        label = 'root'
+        if structure_id == STRUCTURE_ID_NOT_IN_VOLUME:
+            if point[1] > DV_UPPER_BOUND_POSITION:
+                label = 'undefined'
+            else:
+                label = 'out of brain'
     
     return label
 
 def clean_channel_annotations(mouse_id, channel_path, df_channels: pd.DataFrame) -> None:
-    #annotation_path = pathlib.Path(f'//allen/programs/mindscope/workgroups/np-behavior/tissuecyte/{mouse_id}')
-    #channels_paths = tuple(annotation_path.glob(f'*_channels_{mouse_id}_warped.csv'))
-
-    #for channel_path in channels_paths:
     for index, row in df_channels.iterrows():
+        df_channels.loc[index, 'structure_id'] = ANNOTATION_VOLUME[row.AP, row.DV, row.ML]
+
         if pd.isna(row.region) or row.region == 'out of brain':
             label = get_structure_acronym((row.AP, row.DV, row.ML))
+            if label == 'out of brain':
+                df_channels.loc[index, 'AP'] = -1
+                df_channels.loc[index, 'DV'] = -1
+                df_channels.loc[index, 'ML'] = -1
+
             df_channels.loc[index, 'region'] = label
-        
+            
         if pd.isna(row.postprocessed_region) or row.postprocessed_region == 'out of brain':
             label = get_structure_acronym((row.AP, row.DV, row.ML))
             df_channels.loc[index, 'postprocessed_region'] = label
