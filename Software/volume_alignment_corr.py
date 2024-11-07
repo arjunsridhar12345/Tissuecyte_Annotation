@@ -451,6 +451,7 @@ class PlotDisplayItem():
 
             # get scale factor
             self.scale = np.linalg.norm(self.vectorScale) / np.linalg.norm(self.vector)
+            print(self.scale)
             #print(self.scale)
             #channels_scale = np.linspace(0, self.scale, 384)
 
@@ -1261,8 +1262,8 @@ class VolumeAlignment(QWidget):
 
         df = pd.DataFrame(dict_final)
         df.to_csv(os.path.join(self.storageDirectory, '{}_channels_{}_warped.csv'.format(probe_name.replace(' ', '_'), self.mouseID)), index=False)
-        path = pathlib.Path('{}_channels_{}_warped.csv'.format(probe_name.replace(' ', '_'), self.mouseID))
-        clean_structure_acronym.clean_channel_annotations(mouse_id, path, df)
+        #path = pathlib.Path('{}_channels_{}_warped.csv'.format(probe_name.replace(' ', '_'), self.mouseID))
+        #clean_structure_acronym.clean_channel_annotations(mouse_id, path, df)
         popup = QMessageBox()
         popup.setText('Channel regions saved')
         popup.exec_()

@@ -10,7 +10,7 @@ import pandas as pd
 import logging
 import pickle
 import SimpleITK as sitk
-from Software.Database.clean_region import assign_label
+from Software.Database.clean_region import get_structure_acronym
 
 with open(pathlib.Path(r"\\allen\programs\mindscope\workgroups\np-behavior\tissuecyte\field_reference\acrnm_map.pkl"), 'rb') as f:
     ACRONYM_MAP = pickle.load(f)
@@ -144,13 +144,14 @@ def create_insertion_channel_table():
                 insertion_channel['Channel_annotation_file'].append('No annotation file')
                     #logging.warning(e)
             else:
+                cortex_channel = df[(df['region'] != 'out of brain') & ~(pd.isna(df['region']))]['channel'].max()
                 for index, r in df.iterrows():
                     insertion_channel['Channel_{}_AP'.format(index)].append(r.AP)
                     insertion_channel['Channel_{}_DV'.format(index)].append(r.DV)
                     insertion_channel['Channel_{}_ML'.format(index)].append(r.ML)
 
                     if pd.isna(r.region) or r.region == 'out of brain':
-                        region = assign_label(ACRONYM_MAP, ANNOTATION_VOLUME, (r.AP, r.DV, r.ML))
+                        region = get_structure_acronym((r.AP, r.DV, r.ML), r.channel, cortex_channel)
                         insertion_channel['Channel_{}_region'.format(index)].append(region)
                     else:
                         insertion_channel['Channel_{}_region'.format(index)].append(r.region)
