@@ -9,11 +9,12 @@ from scipy.spatial.distance import cdist
 from clean_structure_acronym import clean_channel_annotations
 import argparse
 import warnings
+import shutil
 
 parser = argparse.ArgumentParser()
 #parser.add_argument('-i', '--inputResampledImages', help='Directory to resampeld images', required=True)
 #parser.add_argument('-a', '--annotationFileLocation', help='Path for annotation csv file to be saved in this location', required=True)
-parser.add_argument('--mouseID', help='Mouse ID of session', required=False)
+parser.add_argument('--mouseID', help='Mouse ID of session')
 
 TISSUECYTE_PATH = pathlib.Path('//allen/programs/mindscope/workgroups/np-behavior/tissuecyte')
 
@@ -137,29 +138,11 @@ def run_tests() -> None:
 
 if __name__ == '__main__':
     #run_tests()
-    import shutil
     dest_path = pathlib.Path(r"\\allen\programs\mindscope\workgroups\dynamicrouting\arjun")
     source_path = pathlib.Path(r"\\allen\programs\mindscope\workgroups\np-behavior\tissuecyte")
-    """
-    for mouse_id in ['620263', '620264', '626791', '628801', '636397', '644547', '646318', '636766', '644864', '644866',
-                     '649943', '644867', '649944', '662983', '668759', '670181', '670180', '670248', '660023', '666986',
-                     '668755', '667252', '674562', '681532', '686740', '664851', '690706', '686176', '676909', '702131', 
-                     '702136', '703333', '699847', '703880', '706401', '703882', '708016', '712815', '726088', '714748', '714753', '715710',
-                     '713655']:
-    """
-    #process_white_matter_channels('733780')
-    mouse_id = '733780'
+
+    args = parser.parse_args()
+    mouse_id = args.mouseID
+    process_white_matter_channels(mouse_id)
     shutil.copytree(source_path / mouse_id / 'images', dest_path / 'slice_images' / mouse_id)
-    """
-
-    dest_path = pathlib.Path(r"\\allen\programs\mindscope\workgroups\dynamicrouting\arjun")
-    source_path = pathlib.Path(r"\\allen\programs\mindscope\workgroups\np-behavior\tissuecyte")
-    import shutil
-
-    for mouse_id in ['620263', '620264', '626791', '628801', '636397', '644547', '646318', '636766', '644864', '644866',
-                        '649943', '644867', '649944', '662983', '668759', '670181', '670180', '670248', '660023', '666986',
-                        '668755', '667252', '674562', '681532', '686740', '664851', '690706', '686176', '676909', '702131', 
-                        '702136', '703333', '699847', '703880', '706401', '703882', '708016', '712815', '726088', '714748', '714753', '715710',
-                        '713655']:
-        shutil.copytree(source_path / mouse_id / 'anchors', dest_path / 'alignment_anchors' / mouse_id)
-    """
+    shutil.copytree(source_path / mouse_id / 'anchors', dest_path / 'alignment_anchors' / mouse_id)
