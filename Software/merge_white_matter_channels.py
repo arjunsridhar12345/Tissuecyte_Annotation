@@ -144,5 +144,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
     mouse_id = args.mouseID
     process_white_matter_channels(mouse_id)
-    shutil.copytree(source_path / mouse_id / 'images', dest_path / 'slice_images' / mouse_id)
-    shutil.copytree(source_path / mouse_id / 'anchors', dest_path / 'alignment_anchors' / mouse_id)
+    shutil.copytree(source_path / mouse_id / 'images', dest_path / 'slice_images' / mouse_id, dirs_exist_ok=True)
+    shutil.copytree(source_path / mouse_id / 'anchors', dest_path / 'alignment_anchors' / mouse_id, dirs_exist_ok=True)
