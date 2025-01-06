@@ -90,6 +90,10 @@ def get_implant_vectors(insertions:dict, implant='2002', num_insertion_days:int=
             implant_coords[k] = np.array(implant_coordinates.HOLE_COORDS_2005[insertions[k]])
         elif implant == '2006':
             implant_coords[k] = np.array(implant_coordinates.HOLE_COORDS_2006[insertions[k]])
+        elif implant == '2011':
+            implant_coords[k] = np.array(implant_coordinates.HOLE_COORDS_2011[insertions[k]])
+        elif implant == '2014':
+            implant_coords[k] = np.array(implant_coordinates.HOLE_COORDS_2014[insertions[k]])
         else:
             raise ValueError(f'No bregma coordinates for {implant} implant')
 
