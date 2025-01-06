@@ -29,7 +29,7 @@ PROBES = ['A', 'B', 'C', 'D', 'E', 'F']
 SURFACE_IMAGE_PATH = pathlib.Path('//allen/programs/mindscope/workgroups/dynamicrouting/cabasco/composite_surface_images')
 ##in bregma (anything in mm will do)
 
-IMPLANTS = ('2002', '2005', '2006')
+IMPLANTS = ('2002', '2005', '2006', '2011', '2014')
 
 ##only works if mouse has probe_insertions jsons
 def insertion_holes_from_json(mouse, probes):
