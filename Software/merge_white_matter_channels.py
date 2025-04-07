@@ -12,8 +12,6 @@ import warnings
 import shutil
 
 parser = argparse.ArgumentParser()
-#parser.add_argument('-i', '--inputResampledImages', help='Directory to resampeld images', required=True)
-#parser.add_argument('-a', '--annotationFileLocation', help='Path for annotation csv file to be saved in this location', required=True)
 parser.add_argument('--mouseID', help='Mouse ID of session')
 
 TISSUECYTE_PATH = pathlib.Path('//allen/programs/mindscope/workgroups/np-behavior/tissuecyte')
@@ -143,6 +141,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     mouse_id = args.mouseID
+
     process_white_matter_channels(mouse_id)
     shutil.copytree(source_path / mouse_id / 'images', dest_path / 'slice_images' / mouse_id, dirs_exist_ok=True)
     shutil.copytree(source_path / mouse_id / 'anchors', dest_path / 'alignment_anchors' / mouse_id, dirs_exist_ok=True)
+    shutil.copytree(source_path / mouse_id / 'image_plots', dest_path / 'correlation_plots' / mouse_id, dirs_exist_ok=True)
